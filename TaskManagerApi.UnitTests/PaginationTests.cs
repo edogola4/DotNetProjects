@@ -26,9 +26,9 @@ public class PaginationTests
         }
         await context.SaveChangesAsync();
         var service = new TaskService(context);
-        var parameters = new PaginationParameters { PageNumber = 2, PageSize = 10 };
+        var parameters = new TaskFilterParameters { PageNumber = 2, PageSize = 10 };
 
-        var result = await service.GetUserTasksAsync(1, parameters, null, null);
+        var result = await service.GetUserTasksAsync(1, parameters);
 
         result.Items.Should().HaveCount(10);
         result.CurrentPage.Should().Be(2);
@@ -48,9 +48,9 @@ public class PaginationTests
         }
         await context.SaveChangesAsync();
         var service = new TaskService(context);
-        var parameters = new PaginationParameters { PageNumber = 3, PageSize = 10 };
+        var parameters = new TaskFilterParameters { PageNumber = 3, PageSize = 10 };
 
-        var result = await service.GetUserTasksAsync(1, parameters, null, null);
+        var result = await service.GetUserTasksAsync(1, parameters);
 
         result.Items.Should().HaveCount(5);
         result.HasNext.Should().BeFalse();
@@ -60,7 +60,7 @@ public class PaginationTests
     [Fact]
     public void PaginationParameters_EnforcesMaxPageSize()
     {
-        var parameters = new PaginationParameters { PageSize = 200 };
+        var parameters = new TaskFilterParameters { PageSize = 200 };
 
         parameters.PageSize.Should().Be(100);
     }

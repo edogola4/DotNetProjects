@@ -32,22 +32,44 @@ public class TaskService : ITaskService
         return MapToDto(task);
     }
 
-    public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, PaginationParameters parameters, int? categoryId = null, string? tags = null)
+    public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, TaskFilterParameters parameters)
     {
         var query = _context.Tasks
             .Include(t => t.Tags)
             .Where(t => t.UserId == userId);
 
-        if (categoryId.HasValue)
-            query = query.Where(t => t.CategoryId == categoryId.Value);
+        if (!string.IsNullOrEmpty(parameters.Search))
+            query = query.Where(t => t.Title.ToLower().Contains(parameters.Search.ToLower()) || t.Description.ToLower().Contains(parameters.Search.ToLower()));
 
-        if (!string.IsNullOrEmpty(tags))
+        if (parameters.IsCompleted.HasValue)
+            query = query.Where(t => t.IsCompleted == parameters.IsCompleted.Value);
+
+        if (parameters.Priority.HasValue)
+            query = query.Where(t => t.Priority == parameters.Priority.Value);
+
+        if (parameters.CategoryId.HasValue)
+            query = query.Where(t => t.CategoryId == parameters.CategoryId.Value);
+
+        if (!string.IsNullOrEmpty(parameters.Tags))
         {
-            var tagList = tags.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim().ToLower());
+            var tagList = parameters.Tags.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim().ToLower());
             query = query.Where(t => t.Tags.Any(tag => tagList.Contains(tag.Name.ToLower())));
         }
 
-        query = query.OrderByDescending(t => t.CreatedAt);
+        if (parameters.DueDateFrom.HasValue)
+            query = query.Where(t => t.DueDate >= parameters.DueDateFrom.Value);
+
+        if (parameters.DueDateTo.HasValue)
+            query = query.Where(t => t.DueDate <= parameters.DueDateTo.Value);
+
+        query = parameters.SortBy.ToLower() switch
+        {
+            "title" => parameters.SortOrder.ToLower() == "asc" ? query.OrderBy(t => t.Title) : query.OrderByDescending(t => t.Title),
+            "duedate" => parameters.SortOrder.ToLower() == "asc" ? query.OrderBy(t => t.DueDate) : query.OrderByDescending(t => t.DueDate),
+            "priority" => parameters.SortOrder.ToLower() == "asc" ? query.OrderBy(t => t.Priority) : query.OrderByDescending(t => t.Priority),
+            _ => parameters.SortOrder.ToLower() == "asc" ? query.OrderBy(t => t.CreatedAt) : query.OrderByDescending(t => t.CreatedAt)
+        };
+
         var count = await query.CountAsync();
         
         var tasks = await query

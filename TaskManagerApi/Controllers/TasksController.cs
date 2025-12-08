@@ -30,9 +30,9 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetTasks([FromQuery] PaginationParameters parameters, [FromQuery] int? categoryId = null, [FromQuery] string? tags = null)
+    public async Task<IActionResult> GetTasks([FromQuery] TaskFilterParameters parameters)
     {
-        var pagedTasks = await _taskService.GetUserTasksAsync(GetUserId(), parameters, categoryId, tags);
+        var pagedTasks = await _taskService.GetUserTasksAsync(GetUserId(), parameters);
         
         var metadata = new
         {

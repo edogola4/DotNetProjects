@@ -58,9 +58,9 @@ public class TagTests
         );
         await context.SaveChangesAsync();
         var service = new TaskService(context);
-        var parameters = new PaginationParameters();
+        var parameters = new TaskFilterParameters { CategoryId = 1 };
 
-        var result = await service.GetUserTasksAsync(1, parameters, categoryId: 1);
+        var result = await service.GetUserTasksAsync(1, parameters);
 
         result.Items.Should().HaveCount(1);
         result.Items.First().Title.Should().Be("Task1");
