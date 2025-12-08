@@ -41,11 +41,12 @@ public class TaskServiceTests
         );
         await context.SaveChangesAsync();
         var service = new TaskService(context);
+        var parameters = new PaginationParameters();
 
-        var result = await service.GetUserTasksAsync(1);
+        var result = await service.GetUserTasksAsync(1, parameters);
 
-        result.Should().HaveCount(1);
-        result.First().Title.Should().Be("User1 Task");
+        result.Items.Should().HaveCount(1);
+        result.Items.First().Title.Should().Be("User1 Task");
     }
 
     [Fact]

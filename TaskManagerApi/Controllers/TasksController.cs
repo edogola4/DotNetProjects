@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagerApi.DTOs;
+using TaskManagerApi.Models;
 using TaskManagerApi.Services;
 
 namespace TaskManagerApi.Controllers;
@@ -28,10 +30,22 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetTasks()
+    public async Task<IActionResult> GetTasks([FromQuery] PaginationParameters parameters)
     {
-        var tasks = await _taskService.GetUserTasksAsync(GetUserId());
-        return Ok(tasks);
+        var pagedTasks = await _taskService.GetUserTasksAsync(GetUserId(), parameters);
+        
+        var metadata = new
+        {
+            pagedTasks.TotalCount,
+            pagedTasks.PageSize,
+            pagedTasks.CurrentPage,
+            pagedTasks.TotalPages,
+            pagedTasks.HasNext,
+            pagedTasks.HasPrevious
+        };
+        
+        Response.Headers.Append("X-Pagination", JsonSerializer.Serialize(metadata));
+        return Ok(pagedTasks.Items);
     }
 
     [HttpGet("{id}")]

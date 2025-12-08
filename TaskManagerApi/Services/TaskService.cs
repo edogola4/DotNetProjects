@@ -32,14 +32,21 @@ public class TaskService : ITaskService
         return MapToDto(task);
     }
 
-    public async Task<IEnumerable<TaskResponseDto>> GetUserTasksAsync(int userId)
+    public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, PaginationParameters parameters)
     {
-        var tasks = await _context.Tasks
+        var query = _context.Tasks
             .Where(t => t.UserId == userId)
-            .OrderByDescending(t => t.CreatedAt)
+            .OrderByDescending(t => t.CreatedAt);
+
+        var count = await query.CountAsync();
+        
+        var tasks = await query
+            .Skip((parameters.PageNumber - 1) * parameters.PageSize)
+            .Take(parameters.PageSize)
             .ToListAsync();
 
-        return tasks.Select(MapToDto);
+        var items = tasks.Select(MapToDto).ToList();
+        return new PagedList<TaskResponseDto>(items, count, parameters.PageNumber, parameters.PageSize);
     }
 
     public async Task<TaskResponseDto?> GetTaskByIdAsync(int userId, int taskId)
