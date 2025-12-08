@@ -30,9 +30,9 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetTasks([FromQuery] PaginationParameters parameters)
+    public async Task<IActionResult> GetTasks([FromQuery] PaginationParameters parameters, [FromQuery] int? categoryId = null, [FromQuery] string? tags = null)
     {
-        var pagedTasks = await _taskService.GetUserTasksAsync(GetUserId(), parameters);
+        var pagedTasks = await _taskService.GetUserTasksAsync(GetUserId(), parameters, categoryId, tags);
         
         var metadata = new
         {
@@ -74,5 +74,19 @@ public class TasksController : ControllerBase
     {
         var task = await _taskService.CompleteTaskAsync(GetUserId(), id);
         return task == null ? NotFound() : Ok(task);
+    }
+
+    [HttpPost("{id}/tags")]
+    public async Task<IActionResult> AddTags(int id, [FromBody] List<string> tags)
+    {
+        await _taskService.AddTagsToTaskAsync(GetUserId(), id, tags);
+        return NoContent();
+    }
+
+    [HttpDelete("{id}/tags")]
+    public async Task<IActionResult> RemoveTags(int id, [FromBody] List<string> tags)
+    {
+        await _taskService.RemoveTagsFromTaskAsync(GetUserId(), id, tags);
+        return NoContent();
     }
 }

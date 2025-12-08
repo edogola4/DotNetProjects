@@ -6,9 +6,11 @@ namespace TaskManagerApi.Services;
 public interface ITaskService
 {
     Task<TaskResponseDto> CreateTaskAsync(int userId, CreateTaskDto dto);
-    Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, PaginationParameters parameters);
+    Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, PaginationParameters parameters, int? categoryId = null, string? tags = null);
     Task<TaskResponseDto?> GetTaskByIdAsync(int userId, int taskId);
     Task<TaskResponseDto?> UpdateTaskAsync(int userId, int taskId, UpdateTaskDto dto);
     Task<bool> DeleteTaskAsync(int userId, int taskId);
     Task<TaskResponseDto?> CompleteTaskAsync(int userId, int taskId);
+    Task AddTagsToTaskAsync(int userId, int taskId, List<string> tagNames);
+    Task RemoveTagsFromTaskAsync(int userId, int taskId, List<string> tagNames);
 }

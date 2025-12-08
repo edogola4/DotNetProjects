@@ -43,7 +43,7 @@ public class TaskServiceTests
         var service = new TaskService(context);
         var parameters = new PaginationParameters();
 
-        var result = await service.GetUserTasksAsync(1, parameters);
+        var result = await service.GetUserTasksAsync(1, parameters, null, null);
 
         result.Items.Should().HaveCount(1);
         result.Items.First().Title.Should().Be("User1 Task");

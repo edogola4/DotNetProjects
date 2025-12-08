@@ -32,12 +32,22 @@ public class TaskService : ITaskService
         return MapToDto(task);
     }
 
-    public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, PaginationParameters parameters)
+    public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, PaginationParameters parameters, int? categoryId = null, string? tags = null)
     {
         var query = _context.Tasks
-            .Where(t => t.UserId == userId)
-            .OrderByDescending(t => t.CreatedAt);
+            .Include(t => t.Tags)
+            .Where(t => t.UserId == userId);
 
+        if (categoryId.HasValue)
+            query = query.Where(t => t.CategoryId == categoryId.Value);
+
+        if (!string.IsNullOrEmpty(tags))
+        {
+            var tagList = tags.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim().ToLower());
+            query = query.Where(t => t.Tags.Any(tag => tagList.Contains(tag.Name.ToLower())));
+        }
+
+        query = query.OrderByDescending(t => t.CreatedAt);
         var count = await query.CountAsync();
         
         var tasks = await query
@@ -101,6 +111,43 @@ public class TaskService : ITaskService
         await _context.SaveChangesAsync();
 
         return MapToDto(task);
+    }
+
+    public async Task AddTagsToTaskAsync(int userId, int taskId, List<string> tagNames)
+    {
+        var task = await _context.Tasks
+            .Include(t => t.Tags)
+            .FirstOrDefaultAsync(t => t.Id == taskId && t.UserId == userId);
+
+        if (task == null) return;
+
+        foreach (var tagName in tagNames)
+        {
+            var tag = await _context.Tags.FirstOrDefaultAsync(t => t.Name.ToLower() == tagName.ToLower());
+            if (tag == null)
+            {
+                tag = new Tag { Name = tagName.ToLower() };
+                _context.Tags.Add(tag);
+            }
+            if (!task.Tags.Contains(tag))
+                task.Tags.Add(tag);
+        }
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task RemoveTagsFromTaskAsync(int userId, int taskId, List<string> tagNames)
+    {
+        var task = await _context.Tasks
+            .Include(t => t.Tags)
+            .FirstOrDefaultAsync(t => t.Id == taskId && t.UserId == userId);
+
+        if (task == null) return;
+
+        var tagsToRemove = task.Tags.Where(t => tagNames.Contains(t.Name, StringComparer.OrdinalIgnoreCase)).ToList();
+        foreach (var tag in tagsToRemove)
+            task.Tags.Remove(tag);
+
+        await _context.SaveChangesAsync();
     }
 
     private static TaskResponseDto MapToDto(TaskItem task)

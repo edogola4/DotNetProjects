@@ -28,7 +28,7 @@ public class PaginationTests
         var service = new TaskService(context);
         var parameters = new PaginationParameters { PageNumber = 2, PageSize = 10 };
 
-        var result = await service.GetUserTasksAsync(1, parameters);
+        var result = await service.GetUserTasksAsync(1, parameters, null, null);
 
         result.Items.Should().HaveCount(10);
         result.CurrentPage.Should().Be(2);
@@ -50,7 +50,7 @@ public class PaginationTests
         var service = new TaskService(context);
         var parameters = new PaginationParameters { PageNumber = 3, PageSize = 10 };
 
-        var result = await service.GetUserTasksAsync(1, parameters);
+        var result = await service.GetUserTasksAsync(1, parameters, null, null);
 
         result.Items.Should().HaveCount(5);
         result.HasNext.Should().BeFalse();
