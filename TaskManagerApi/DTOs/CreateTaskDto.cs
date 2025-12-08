@@ -17,4 +17,10 @@ public class CreateTaskDto
     public Priority Priority { get; set; } = Priority.Medium;
     
     public int? CategoryId { get; set; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (DueDate.HasValue && DueDate.Value < DateTime.UtcNow.Date)
+            yield return new ValidationResult("Due date cannot be in the past", new[] { nameof(DueDate) });
+    }
 }

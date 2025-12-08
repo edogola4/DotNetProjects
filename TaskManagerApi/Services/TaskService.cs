@@ -172,6 +172,29 @@ public class TaskService : ITaskService
         await _context.SaveChangesAsync();
     }
 
+    public async Task<IEnumerable<TaskResponseDto>> GetOverdueTasksAsync(int userId)
+    {
+        var now = DateTime.UtcNow;
+        var tasks = await _context.Tasks
+            .Where(t => t.UserId == userId && !t.IsCompleted && t.DueDate.HasValue && t.DueDate.Value < now)
+            .OrderBy(t => t.DueDate)
+            .ToListAsync();
+
+        return tasks.Select(MapToDto);
+    }
+
+    public async Task<IEnumerable<TaskResponseDto>> GetUpcomingTasksAsync(int userId, int days)
+    {
+        var now = DateTime.UtcNow;
+        var futureDate = now.AddDays(days);
+        var tasks = await _context.Tasks
+            .Where(t => t.UserId == userId && !t.IsCompleted && t.DueDate.HasValue && t.DueDate.Value >= now && t.DueDate.Value <= futureDate)
+            .OrderBy(t => t.DueDate)
+            .ToListAsync();
+
+        return tasks.Select(MapToDto);
+    }
+
     private static TaskResponseDto MapToDto(TaskItem task)
     {
         return new TaskResponseDto

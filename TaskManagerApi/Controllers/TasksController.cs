@@ -89,4 +89,18 @@ public class TasksController : ControllerBase
         await _taskService.RemoveTagsFromTaskAsync(GetUserId(), id, tags);
         return NoContent();
     }
+
+    [HttpGet("overdue")]
+    public async Task<IActionResult> GetOverdueTasks()
+    {
+        var tasks = await _taskService.GetOverdueTasksAsync(GetUserId());
+        return Ok(tasks);
+    }
+
+    [HttpGet("upcoming")]
+    public async Task<IActionResult> GetUpcomingTasks([FromQuery] int days = 7)
+    {
+        var tasks = await _taskService.GetUpcomingTasksAsync(GetUserId(), days);
+        return Ok(tasks);
+    }
 }

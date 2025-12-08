@@ -13,4 +13,6 @@ public interface ITaskService
     Task<TaskResponseDto?> CompleteTaskAsync(int userId, int taskId);
     Task AddTagsToTaskAsync(int userId, int taskId, List<string> tagNames);
     Task RemoveTagsFromTaskAsync(int userId, int taskId, List<string> tagNames);
+    Task<IEnumerable<TaskResponseDto>> GetOverdueTasksAsync(int userId);
+    Task<IEnumerable<TaskResponseDto>> GetUpcomingTasksAsync(int userId, int days);
 }
