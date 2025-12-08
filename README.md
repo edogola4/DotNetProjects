@@ -43,12 +43,12 @@ This repository showcases production-ready .NET development practices including:
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/DotNetProjects.git
+git clone https://github.com/edogola4/DotNetProjects.git
 cd DotNetProjects
 ```
 
 ### 2. Configure database connection
-Update `appsettings.json` with your database connection string:
+Update `TaskManagerApi/appsettings.json` with your database connection string:
 ```json
 {
   "ConnectionStrings": {
@@ -59,6 +59,7 @@ Update `appsettings.json` with your database connection string:
 
 ### 3. Apply database migrations
 ```bash
+cd TaskManagerApi
 dotnet ef database update
 ```
 
@@ -76,16 +77,16 @@ Navigate to `https://localhost:5001/swagger` to view the interactive API documen
 
 ```
 DotNetProjects/
-├── Controllers/          # API endpoints
-├── Models/              # Domain entities
-├── DTOs/                # Data transfer objects
-├── Services/            # Business logic
-├── Data/                # DbContext and repositories
-├── Middleware/          # Custom middleware
-├── Migrations/          # EF Core migrations
-└── Tests/
-    ├── UnitTests/       # Unit tests
-    └── IntegrationTests/ # Integration tests
+├── TaskManagerApi/          # Main API project
+│   ├── Controllers/         # API endpoints
+│   ├── Models/             # Domain entities
+│   ├── DTOs/               # Data transfer objects
+│   ├── Services/           # Business logic
+│   ├── Data/               # DbContext and repositories
+│   └── Middleware/         # Custom middleware
+├── TaskManagerApi.UnitTests/       # Unit tests
+├── TaskManagerApi.IntegrationTests/ # Integration tests
+└── TaskManagerApi.sln      # Solution file
 ```
 
 ## 🔑 Authentication
@@ -147,6 +148,9 @@ This will start:
 ## 📊 Development Roadmap
 
 - [x] Sprint 1: Foundation & Authentication (Week 1)
+  - [x] Issue #1: Initial Project Setup ✅
+  - [ ] Issue #2: Database Design & EF Core Setup
+  - [ ] Issue #3: JWT Authentication Infrastructure
 - [ ] Sprint 2: Core Features (Week 2)
 - [ ] Sprint 3: Polish & Production (Week 3)
 
@@ -166,9 +170,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 
 ## 📧 Contact
 
-Your Name - [@yourhandle](https://twitter.com/yourhandle)
-
-Project Link: [https://github.com/yourusername/DotNetProjects](https://github.com/yourusername/DotNetProjects)
+Project Link: [https://github.com/edogola4/DotNetProjects](https://github.com/edogola4/DotNetProjects)
 
 ## 🙏 Acknowledgments
 
@@ -181,4 +183,4 @@ Project Link: [https://github.com/yourusername/DotNetProjects](https://github.co
 
 **Status:** 🚧 In Development - Sprint 1
 **Version:** 0.1.0
-**Last Updated:** December 2025
+**Last Updated:** December 2024
