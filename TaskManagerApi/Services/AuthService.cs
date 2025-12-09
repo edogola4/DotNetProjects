@@ -32,7 +32,8 @@ public class AuthService : IAuthService
         {
             Username = registerDto.Username,
             Email = registerDto.Email,
-            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password)
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Users.Add(user);

@@ -20,7 +20,7 @@ public class TasksController : ControllerBase
         _taskService = taskService;
     }
 
-    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpPost]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto dto)
@@ -49,42 +49,42 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetTask(int id)
+    public async Task<IActionResult> GetTask(Guid id)
     {
         var task = await _taskService.GetTaskByIdAsync(GetUserId(), id);
         return task == null ? NotFound() : Ok(task);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateTask(int id, [FromBody] UpdateTaskDto dto)
+    public async Task<IActionResult> UpdateTask(Guid id, [FromBody] UpdateTaskDto dto)
     {
         var task = await _taskService.UpdateTaskAsync(GetUserId(), id, dto);
         return task == null ? NotFound() : Ok(task);
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTask(int id)
+    public async Task<IActionResult> DeleteTask(Guid id)
     {
         var result = await _taskService.DeleteTaskAsync(GetUserId(), id);
         return result ? NoContent() : NotFound();
     }
 
     [HttpPatch("{id}/complete")]
-    public async Task<IActionResult> CompleteTask(int id)
+    public async Task<IActionResult> CompleteTask(Guid id)
     {
         var task = await _taskService.CompleteTaskAsync(GetUserId(), id);
         return task == null ? NotFound() : Ok(task);
     }
 
     [HttpPost("{id}/tags")]
-    public async Task<IActionResult> AddTags(int id, [FromBody] List<string> tags)
+    public async Task<IActionResult> AddTags(Guid id, [FromBody] List<string> tags)
     {
         await _taskService.AddTagsToTaskAsync(GetUserId(), id, tags);
         return NoContent();
     }
 
     [HttpDelete("{id}/tags")]
-    public async Task<IActionResult> RemoveTags(int id, [FromBody] List<string> tags)
+    public async Task<IActionResult> RemoveTags(Guid id, [FromBody] List<string> tags)
     {
         await _taskService.RemoveTagsFromTaskAsync(GetUserId(), id, tags);
         return NoContent();

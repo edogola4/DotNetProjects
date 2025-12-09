@@ -5,14 +5,14 @@ namespace TaskManagerApi.Services;
 
 public interface ITaskService
 {
-    Task<TaskResponseDto> CreateTaskAsync(int userId, CreateTaskDto dto);
-    Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, TaskFilterParameters parameters);
-    Task<TaskResponseDto?> GetTaskByIdAsync(int userId, int taskId);
-    Task<TaskResponseDto?> UpdateTaskAsync(int userId, int taskId, UpdateTaskDto dto);
-    Task<bool> DeleteTaskAsync(int userId, int taskId);
-    Task<TaskResponseDto?> CompleteTaskAsync(int userId, int taskId);
-    Task AddTagsToTaskAsync(int userId, int taskId, List<string> tagNames);
-    Task RemoveTagsFromTaskAsync(int userId, int taskId, List<string> tagNames);
-    Task<IEnumerable<TaskResponseDto>> GetOverdueTasksAsync(int userId);
-    Task<IEnumerable<TaskResponseDto>> GetUpcomingTasksAsync(int userId, int days);
+    Task<TaskResponseDto> CreateTaskAsync(Guid userId, CreateTaskDto dto);
+    Task<PagedList<TaskResponseDto>> GetUserTasksAsync(Guid userId, TaskFilterParameters parameters);
+    Task<TaskResponseDto?> GetTaskByIdAsync(Guid userId, Guid taskId);
+    Task<TaskResponseDto?> UpdateTaskAsync(Guid userId, Guid taskId, UpdateTaskDto dto);
+    Task<bool> DeleteTaskAsync(Guid userId, Guid taskId);
+    Task<TaskResponseDto?> CompleteTaskAsync(Guid userId, Guid taskId);
+    Task AddTagsToTaskAsync(Guid userId, Guid taskId, List<string> tagNames);
+    Task RemoveTagsFromTaskAsync(Guid userId, Guid taskId, List<string> tagNames);
+    Task<IEnumerable<TaskResponseDto>> GetOverdueTasksAsync(Guid userId);
+    Task<IEnumerable<TaskResponseDto>> GetUpcomingTasksAsync(Guid userId, int days);
 }

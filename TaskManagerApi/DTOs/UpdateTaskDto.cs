@@ -17,5 +17,5 @@ public class UpdateTaskDto
     
     public Priority? Priority { get; set; }
     
-    public int? CategoryId { get; set; }
+    public Guid? CategoryId { get; set; }
 }

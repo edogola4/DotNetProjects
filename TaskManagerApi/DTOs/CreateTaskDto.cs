@@ -16,7 +16,7 @@ public class CreateTaskDto
     
     public Priority Priority { get; set; } = Priority.Medium;
     
-    public int? CategoryId { get; set; }
+    public Guid? CategoryId { get; set; }
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {

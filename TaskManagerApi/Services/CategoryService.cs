@@ -14,12 +14,13 @@ public class CategoryService : ICategoryService
         _context = context;
     }
 
-    public async Task<CategoryResponseDto> CreateCategoryAsync(int userId, CategoryDto dto)
+    public async Task<CategoryResponseDto> CreateCategoryAsync(Guid userId, CategoryDto dto)
     {
         var category = new Category
         {
             Name = dto.Name,
-            UserId = userId
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow
         };
 
         _context.Categories.Add(category);
@@ -28,7 +29,7 @@ public class CategoryService : ICategoryService
         return MapToDto(category);
     }
 
-    public async Task<IEnumerable<CategoryResponseDto>> GetUserCategoriesAsync(int userId)
+    public async Task<IEnumerable<CategoryResponseDto>> GetUserCategoriesAsync(Guid userId)
     {
         var categories = await _context.Categories
             .Where(c => c.UserId == userId)
@@ -38,7 +39,7 @@ public class CategoryService : ICategoryService
         return categories.Select(MapToDto);
     }
 
-    public async Task<CategoryResponseDto?> UpdateCategoryAsync(int userId, int categoryId, CategoryDto dto)
+    public async Task<CategoryResponseDto?> UpdateCategoryAsync(Guid userId, Guid categoryId, CategoryDto dto)
     {
         var category = await _context.Categories
             .FirstOrDefaultAsync(c => c.Id == categoryId && c.UserId == userId);
@@ -51,7 +52,7 @@ public class CategoryService : ICategoryService
         return MapToDto(category);
     }
 
-    public async Task<bool> DeleteCategoryAsync(int userId, int categoryId)
+    public async Task<bool> DeleteCategoryAsync(Guid userId, Guid categoryId)
     {
         var category = await _context.Categories
             .FirstOrDefaultAsync(c => c.Id == categoryId && c.UserId == userId);
