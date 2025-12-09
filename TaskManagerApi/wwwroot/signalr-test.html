@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SignalR Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@latest/dist/browser/signalr.min.js"></script>
+</head>
+<body>
+    <h1>SignalR Task Notifications Test</h1>
+    <div>
+        <label>JWT Token:</label><br>
+        <input type="text" id="token" style="width: 500px;" placeholder="Paste your JWT token here">
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    <div id="status">Status: Disconnected</div>
+    <div id="messages"></div>
+
+    <script>
+        let connection = null;
+
+        async function connect() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                alert('Please enter a JWT token');
+                return;
+            }
+
+            connection = new signalR.HubConnectionBuilder()
+                .withUrl("http://localhost:5064/hubs/tasks", {
+                    accessTokenFactory: () => token
+                })
+                .build();
+
+            connection.on("TaskCreated", (task) => {
+                addMessage("Task Created: " + JSON.stringify(task));
+            });
+
+            connection.on("TaskUpdated", (task) => {
+                addMessage("Task Updated: " + JSON.stringify(task));
+            });
+
+            connection.on("TaskDeleted", (taskId) => {
+                addMessage("Task Deleted: " + taskId);
+            });
+
+            connection.on("ReceiveTaskNotification", (message) => {
+                addMessage("Notification: " + message);
+            });
+
+            try {
+                await connection.start();
+                document.getElementById('status').innerText = "Status: Connected";
+                addMessage("Connected to SignalR hub!");
+            } catch (err) {
+                document.getElementById('status').innerText = "Status: Connection Failed";
+                addMessage("Error: " + err);
+            }
+        }
+
+        async function disconnect() {
+            if (connection) {
+                await connection.stop();
+                document.getElementById('status').innerText = "Status: Disconnected";
+                addMessage("Disconnected from SignalR hub");
+            }
+        }
+
+        function addMessage(msg) {
+            const div = document.createElement('div');
+            div.textContent = new Date().toLocaleTimeString() + " - " + msg;
+            document.getElementById('messages').appendChild(div);
+        }
+    </script>
+</body>
+</html>

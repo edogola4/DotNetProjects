@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TaskManagerApi.Data;
 using TaskManagerApi.DTOs;
+using TaskManagerApi.Hubs;
 using TaskManagerApi.Models;
 
 namespace TaskManagerApi.Services;
@@ -8,10 +10,12 @@ namespace TaskManagerApi.Services;
 public class TaskService : ITaskService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IHubContext<TaskHub> _hubContext;
 
-    public TaskService(ApplicationDbContext context)
+    public TaskService(ApplicationDbContext context, IHubContext<TaskHub> hubContext)
     {
         _context = context;
+        _hubContext = hubContext;
     }
 
     public async Task<TaskResponseDto> CreateTaskAsync(Guid userId, CreateTaskDto dto)
@@ -32,7 +36,9 @@ public class TaskService : ITaskService
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
-        return MapToDto(task);
+        var taskDto = MapToDto(task);
+        await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskCreated", taskDto);
+        return taskDto;
     }
 
     public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(Guid userId, TaskFilterParameters parameters)
@@ -109,7 +115,9 @@ public class TaskService : ITaskService
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return MapToDto(task);
+        var result = MapToDto(task);
+        await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskUpdated", result);
+        return result;
     }
 
     public async Task<bool> DeleteTaskAsync(Guid userId, Guid taskId)
@@ -121,6 +129,7 @@ public class TaskService : ITaskService
 
         _context.Tasks.Remove(task);
         await _context.SaveChangesAsync();
+        await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskDeleted", taskId.ToString());
         return true;
     }
 
@@ -135,7 +144,9 @@ public class TaskService : ITaskService
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
 
-        return MapToDto(task);
+        var result = MapToDto(task);
+        await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskUpdated", result);
+        return result;
     }
 
     public async Task AddTagsToTaskAsync(Guid userId, Guid taskId, List<string> tagNames)
