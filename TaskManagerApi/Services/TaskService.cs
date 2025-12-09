@@ -36,9 +36,9 @@ public class TaskService : ITaskService
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
-        var dto = MapToDto(task);
-        await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskCreated", dto);
-        return dto;
+        var taskDto = MapToDto(task);
+        await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskCreated", taskDto);
+        return taskDto;
     }
 
     public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(Guid userId, TaskFilterParameters parameters)
