@@ -74,13 +74,5 @@ public class ApplicationDbContext : DbContext
             .HasMany(t => t.Tags)
             .WithMany(tag => tag.Tasks)
             .UsingEntity(j => j.ToTable("TaskTags"));
-        
-        // Seed data
-        modelBuilder.Entity<Tag>().HasData(
-            new Tag { Id = 1, Name = "urgent" },
-            new Tag { Id = 2, Name = "work" },
-            new Tag { Id = 3, Name = "personal" },
-            new Tag { Id = 4, Name = "important" }
-        );
     }
 }

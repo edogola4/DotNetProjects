@@ -14,8 +14,9 @@ public class TaskService : ITaskService
         _context = context;
     }
 
-    public async Task<TaskResponseDto> CreateTaskAsync(int userId, CreateTaskDto dto)
+    public async Task<TaskResponseDto> CreateTaskAsync(Guid userId, CreateTaskDto dto)
     {
+        var now = DateTime.UtcNow;
         var task = new TaskItem
         {
             Title = dto.Title,
@@ -23,7 +24,9 @@ public class TaskService : ITaskService
             DueDate = dto.DueDate,
             Priority = dto.Priority,
             CategoryId = dto.CategoryId,
-            UserId = userId
+            UserId = userId,
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         _context.Tasks.Add(task);
@@ -32,7 +35,7 @@ public class TaskService : ITaskService
         return MapToDto(task);
     }
 
-    public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(int userId, TaskFilterParameters parameters)
+    public async Task<PagedList<TaskResponseDto>> GetUserTasksAsync(Guid userId, TaskFilterParameters parameters)
     {
         var query = _context.Tasks
             .Include(t => t.Tags)
@@ -81,7 +84,7 @@ public class TaskService : ITaskService
         return new PagedList<TaskResponseDto>(items, count, parameters.PageNumber, parameters.PageSize);
     }
 
-    public async Task<TaskResponseDto?> GetTaskByIdAsync(int userId, int taskId)
+    public async Task<TaskResponseDto?> GetTaskByIdAsync(Guid userId, Guid taskId)
     {
         var task = await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == taskId && t.UserId == userId);
@@ -89,7 +92,7 @@ public class TaskService : ITaskService
         return task == null ? null : MapToDto(task);
     }
 
-    public async Task<TaskResponseDto?> UpdateTaskAsync(int userId, int taskId, UpdateTaskDto dto)
+    public async Task<TaskResponseDto?> UpdateTaskAsync(Guid userId, Guid taskId, UpdateTaskDto dto)
     {
         var task = await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == taskId && t.UserId == userId);
@@ -109,7 +112,7 @@ public class TaskService : ITaskService
         return MapToDto(task);
     }
 
-    public async Task<bool> DeleteTaskAsync(int userId, int taskId)
+    public async Task<bool> DeleteTaskAsync(Guid userId, Guid taskId)
     {
         var task = await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == taskId && t.UserId == userId);
@@ -121,7 +124,7 @@ public class TaskService : ITaskService
         return true;
     }
 
-    public async Task<TaskResponseDto?> CompleteTaskAsync(int userId, int taskId)
+    public async Task<TaskResponseDto?> CompleteTaskAsync(Guid userId, Guid taskId)
     {
         var task = await _context.Tasks
             .FirstOrDefaultAsync(t => t.Id == taskId && t.UserId == userId);
@@ -135,7 +138,7 @@ public class TaskService : ITaskService
         return MapToDto(task);
     }
 
-    public async Task AddTagsToTaskAsync(int userId, int taskId, List<string> tagNames)
+    public async Task AddTagsToTaskAsync(Guid userId, Guid taskId, List<string> tagNames)
     {
         var task = await _context.Tasks
             .Include(t => t.Tags)
@@ -157,7 +160,7 @@ public class TaskService : ITaskService
         await _context.SaveChangesAsync();
     }
 
-    public async Task RemoveTagsFromTaskAsync(int userId, int taskId, List<string> tagNames)
+    public async Task RemoveTagsFromTaskAsync(Guid userId, Guid taskId, List<string> tagNames)
     {
         var task = await _context.Tasks
             .Include(t => t.Tags)
@@ -172,7 +175,7 @@ public class TaskService : ITaskService
         await _context.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<TaskResponseDto>> GetOverdueTasksAsync(int userId)
+    public async Task<IEnumerable<TaskResponseDto>> GetOverdueTasksAsync(Guid userId)
     {
         var now = DateTime.UtcNow;
         var tasks = await _context.Tasks
@@ -183,7 +186,7 @@ public class TaskService : ITaskService
         return tasks.Select(MapToDto);
     }
 
-    public async Task<IEnumerable<TaskResponseDto>> GetUpcomingTasksAsync(int userId, int days)
+    public async Task<IEnumerable<TaskResponseDto>> GetUpcomingTasksAsync(Guid userId, int days)
     {
         var now = DateTime.UtcNow;
         var futureDate = now.AddDays(days);

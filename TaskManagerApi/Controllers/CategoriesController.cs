@@ -18,7 +18,7 @@ public class CategoriesController : ControllerBase
         _categoryService = categoryService;
     }
 
-    private int GetUserId() => int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+    private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
     [HttpPost]
     public async Task<IActionResult> CreateCategory([FromBody] CategoryDto dto)
@@ -35,14 +35,14 @@ public class CategoriesController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryDto dto)
+    public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] CategoryDto dto)
     {
         var category = await _categoryService.UpdateCategoryAsync(GetUserId(), id, dto);
         return category == null ? NotFound() : Ok(category);
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteCategory(int id)
+    public async Task<IActionResult> DeleteCategory(Guid id)
     {
         var result = await _categoryService.DeleteCategoryAsync(GetUserId(), id);
         return result ? NoContent() : NotFound(new { message = "Category not found or has associated tasks" });
