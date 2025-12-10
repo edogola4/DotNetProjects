@@ -19,7 +19,17 @@
     else
     {
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2>My Tasks</h2>
+            <div>
+                @if (currentUser != null)
+                {
+                    <h2>Welcome back, @currentUser.Username! 👋</h2>
+                    <p class="text-muted mb-0">Here are your tasks for today</p>
+                }
+                else
+                {
+                    <h2>My Tasks</h2>
+                }
+            </div>
             <div>
                 <span class="badge @(connectionStatus == "Connected" ? "bg-success" : "bg-danger") me-2">
                     SignalR: @connectionStatus
@@ -168,6 +178,7 @@
     private bool isCreating = false;
     private bool showCreateForm = false;
     private string connectionStatus = "Disconnected";
+    private AuthResponseDto? currentUser;
 
     protected override async Task OnInitializedAsync()
     {
@@ -175,6 +186,7 @@
         
         if (isAuthenticated)
         {
+            currentUser = await AuthService.GetUserDataAsync();
             await LoadTasks();
             await SetupSignalR();
         }
@@ -197,7 +209,7 @@
         SignalRService.TaskDeleted += OnTaskDeleted;
         SignalRService.ConnectionStatusChanged += OnConnectionStatusChanged;
         
-        await SignalRService.StartAsync("https://localhost:5001/hubs/tasks", token);
+        await SignalRService.StartAsync("https://localhost:7001/hubs/tasks", token);
     }
 
     private void OnTaskCreated(TaskResponseDto task)
@@ -235,11 +247,13 @@
             isAuthenticated = await AuthService.IsAuthenticatedAsync();
             if (isAuthenticated)
             {
+                currentUser = await AuthService.GetUserDataAsync();
                 await LoadTasks();
                 await SetupSignalR();
             }
             else
             {
+                currentUser = null;
                 tasks.Clear();
                 await SignalRService.StopAsync();
             }

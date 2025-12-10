@@ -10,7 +10,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Configure HttpClient for API
 builder.Services.AddScoped(sp => new HttpClient 
 { 
-    BaseAddress = new Uri("https://localhost:5001/") // API base URL
+    BaseAddress = new Uri("https://localhost:7001/") // API base URL
 });
 
 // Register services
