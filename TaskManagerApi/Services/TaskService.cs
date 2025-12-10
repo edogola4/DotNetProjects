@@ -149,7 +149,16 @@ public class TaskService : ITaskService
 
         task.IsCompleted = true;
         task.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Task was already modified/deleted, return null
+            return null;
+        }
 
         var result = MapToDto(task);
         await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskUpdated", result);

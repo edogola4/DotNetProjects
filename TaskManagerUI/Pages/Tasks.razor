@@ -262,6 +262,13 @@
     private async Task CreateTask()
     {
         isCreating = true;
+        
+        // Ensure DueDate is UTC if provided
+        if (newTask.DueDate.HasValue)
+        {
+            newTask.DueDate = DateTime.SpecifyKind(newTask.DueDate.Value, DateTimeKind.Utc);
+        }
+        
         var createdTask = await ApiService.CreateTaskAsync(newTask);
         if (createdTask != null)
         {
