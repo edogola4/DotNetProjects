@@ -37,6 +37,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("BlazorUI", policy =>
+    {
+        policy.WithOrigins("http://localhost:5237", "https://localhost:5238")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -80,6 +91,7 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseCors("BlazorUI");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
