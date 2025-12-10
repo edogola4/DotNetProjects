@@ -127,6 +127,30 @@ This API uses JWT Bearer token authentication. To access protected endpoints:
 
 See `/swagger` for complete API documentation.
 
+## 📊 Logging
+
+The API includes structured logging with Serilog for comprehensive monitoring and debugging.
+
+### Features
+- **Console logging** - Real-time logs during development
+- **File logging** - Daily rolling log files in `logs/` directory
+- **Structured data** - JSON context with request IDs, user IDs, and timestamps
+- **Configurable levels** - Different log levels for development and production
+
+### View Logs
+```bash
+# Real-time console logs
+dotnet watch run
+
+# View log files
+tail -f TaskManagerApi/logs/taskmanager-*.log
+```
+
+### Sample Log Output
+```
+2025-12-10 20:38:57.633 +03:00 [INF] Task created: "019b0958-4051-7eb2-8620-b8e4f0eb5c9a" by user "019b0955-bb60-74db-ada7-9b15d5c9ee57"
+```
+
 ## 🔔 Real-time Notifications
 
 The API includes SignalR for real-time task notifications.
@@ -146,6 +170,20 @@ cd TaskManagerClient
 dotnet run
 # Paste your JWT token when prompted
 ```
+
+## 📸 Screenshots
+
+### API Documentation (Swagger UI)
+*[Screenshot placeholder - Add Swagger UI interface]*
+
+### Real-time SignalR Notifications
+*[Screenshot placeholder - Add console client showing real-time notifications]*
+
+### Structured Logging Output
+*[Screenshot placeholder - Add log output showing structured data]*
+
+### API Response Examples
+*[Screenshot placeholder - Add sample JSON responses]*
 
 ## 🧪 Testing
 
@@ -169,6 +207,10 @@ docker-compose up -d
 This will start:
 - API on port 5000
 - PostgreSQL on port 5432
+
+## 📝 API Endpoints Reference
+
+*[Detailed endpoint documentation placeholder - Add comprehensive API reference]*
 
 ## 📊 Development Roadmap
 
