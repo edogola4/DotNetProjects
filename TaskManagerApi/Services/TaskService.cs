@@ -11,11 +11,13 @@ public class TaskService : ITaskService
 {
     private readonly ApplicationDbContext _context;
     private readonly IHubContext<TaskHub> _hubContext;
+    private readonly ILogger<TaskService> _logger;
 
-    public TaskService(ApplicationDbContext context, IHubContext<TaskHub> hubContext)
+    public TaskService(ApplicationDbContext context, IHubContext<TaskHub> hubContext, ILogger<TaskService> logger)
     {
         _context = context;
         _hubContext = hubContext;
+        _logger = logger;
     }
 
     public async Task<TaskResponseDto> CreateTaskAsync(Guid userId, CreateTaskDto dto)
@@ -36,6 +38,8 @@ public class TaskService : ITaskService
         _context.Tasks.Add(task);
         await _context.SaveChangesAsync();
 
+        _logger.LogInformation("Task created: {TaskId} by user {UserId}", task.Id, userId);
+        
         var taskDto = MapToDto(task);
         await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskCreated", taskDto);
         return taskDto;
@@ -129,6 +133,9 @@ public class TaskService : ITaskService
 
         _context.Tasks.Remove(task);
         await _context.SaveChangesAsync();
+        
+        _logger.LogInformation("Task deleted: {TaskId} by user {UserId}", taskId, userId);
+        
         await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskDeleted", taskId.ToString());
         return true;
     }
