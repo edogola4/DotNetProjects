@@ -7,7 +7,8 @@ A collection of .NET 9 projects demonstrating modern development practices, incl
 This repository showcases production-ready .NET development practices including:
 - RESTful API design
 - JWT authentication & authorization
-- Entity Framework Core with SQL Server
+- Entity Framework Core with PostgreSQL
+- SignalR for real-time notifications
 - Comprehensive testing (unit & integration)
 - Clean architecture patterns
 - API documentation with Swagger
@@ -20,14 +21,16 @@ This repository showcases production-ready .NET development practices including:
 - ✅ Advanced search and filtering
 - ✅ Pagination support
 - ✅ Due dates and reminders
+- ✅ Real-time notifications with SignalR
 - ✅ Complete API documentation
 
 ## 🛠️ Tech Stack
 
 - **Framework:** .NET 9
-- **Database:** SQL Server / PostgreSQL
+- **Database:** PostgreSQL 14+
 - **ORM:** Entity Framework Core 9.0
 - **Authentication:** JWT Bearer tokens
+- **Real-time:** SignalR
 - **Documentation:** Swagger/OpenAPI
 - **Testing:** xUnit, Moq, FluentAssertions
 - **Logging:** ASP.NET Core built-in (Serilog optional)
@@ -35,7 +38,7 @@ This repository showcases production-ready .NET development practices including:
 ## 📋 Prerequisites
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- SQL Server 2019+ or PostgreSQL 13+
+- PostgreSQL 14+
 - Visual Studio 2022 / Rider / VS Code
 - Git
 
@@ -48,11 +51,11 @@ cd DotNetProjects
 ```
 
 ### 2. Configure database connection
-Update `TaskManagerApi/appsettings.json` with your database connection string:
+Update `TaskManagerApi/appsettings.json` with your PostgreSQL connection string:
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=TaskManagerDb;Trusted_Connection=True;TrustServerCertificate=True"
+    "DefaultConnection": "Host=localhost;Port=5432;Database=TaskManagerDb;Username=your_username;Password=your_password"
   }
 }
 ```
@@ -83,7 +86,9 @@ DotNetProjects/
 │   ├── DTOs/               # Data transfer objects
 │   ├── Services/           # Business logic
 │   ├── Data/               # DbContext and repositories
+│   ├── Hubs/               # SignalR hubs
 │   └── Middleware/         # Custom middleware
+├── TaskManagerClient/       # SignalR console client
 ├── TaskManagerApi.UnitTests/       # Unit tests
 ├── TaskManagerApi.IntegrationTests/ # Integration tests
 └── TaskManagerApi.sln      # Solution file
@@ -122,6 +127,64 @@ This API uses JWT Bearer token authentication. To access protected endpoints:
 
 See `/swagger` for complete API documentation.
 
+## 📊 Logging
+
+The API includes structured logging with Serilog for comprehensive monitoring and debugging.
+
+### Features
+- **Console logging** - Real-time logs during development
+- **File logging** - Daily rolling log files in `logs/` directory
+- **Structured data** - JSON context with request IDs, user IDs, and timestamps
+- **Configurable levels** - Different log levels for development and production
+
+### View Logs
+```bash
+# Real-time console logs
+dotnet watch run
+
+# View log files
+tail -f TaskManagerApi/logs/taskmanager-*.log
+```
+
+### Sample Log Output
+```
+2025-12-10 20:38:57.633 +03:00 [INF] Task created: "019b0958-4051-7eb2-8620-b8e4f0eb5c9a" by user "019b0955-bb60-74db-ada7-9b15d5c9ee57"
+```
+
+## 🔔 Real-time Notifications
+
+The API includes SignalR for real-time task notifications.
+
+### SignalR Hub Endpoint
+- **WebSocket:** `ws://localhost:5064/hubs/tasks`
+- **HTTPS:** `wss://localhost:5064/hubs/tasks`
+
+### Events
+- `TaskCreated` - Fired when a task is created
+- `TaskUpdated` - Fired when a task is updated
+- `TaskDeleted` - Fired when a task is deleted
+
+### Test with Console Client
+```bash
+cd TaskManagerClient
+dotnet run
+# Paste your JWT token when prompted
+```
+
+## 📸 Screenshots
+
+### API Documentation (Swagger UI)
+*[Screenshot placeholder - Add Swagger UI interface]*
+
+### Real-time SignalR Notifications
+*[Screenshot placeholder - Add console client showing real-time notifications]*
+
+### Structured Logging Output
+*[Screenshot placeholder - Add log output showing structured data]*
+
+### API Response Examples
+*[Screenshot placeholder - Add sample JSON responses]*
+
 ## 🧪 Testing
 
 ### Run all tests
@@ -143,7 +206,11 @@ docker-compose up -d
 
 This will start:
 - API on port 5000
-- SQL Server on port 1433
+- PostgreSQL on port 5432
+
+## 📝 API Endpoints Reference
+
+*[Detailed endpoint documentation placeholder - Add comprehensive API reference]*
 
 ## 📊 Development Roadmap
 
