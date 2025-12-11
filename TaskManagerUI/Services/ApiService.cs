@@ -83,4 +83,12 @@ public class ApiService
         var response = await _httpClient.PatchAsync($"api/tasks/{id}/complete", null);
         return response.IsSuccessStatusCode;
     }
+
+    public async Task<dynamic?> GetTaskStatsAsync()
+    {
+        var response = await _httpClient.GetAsync("api/tasks/stats");
+        return response.IsSuccessStatusCode 
+            ? await response.Content.ReadFromJsonAsync<dynamic>(_jsonOptions)
+            : null;
+    }
 }

@@ -2,6 +2,7 @@
 @using TaskManagerUI.DTOs
 @using TaskManagerUI.Services
 @inject AuthService AuthService
+@inject ApiService ApiService
 @inject NavigationManager Navigation
 
 <div class="container mt-4">
@@ -100,10 +101,27 @@
 
     private async Task LoadTaskStats()
     {
-        // This would typically call an API endpoint to get user statistics
-        // For now, using placeholder values
-        completedTasks = 12;
-        pendingTasks = 5;
+        try
+        {
+            var stats = await ApiService.GetTaskStatsAsync();
+            if (stats != null)
+            {
+                var statsJson = System.Text.Json.JsonSerializer.Serialize(stats);
+                var statsDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(statsJson);
+                
+                if (statsDict != null)
+                {
+                    completedTasks = statsDict.ContainsKey("CompletedTasks") ? Convert.ToInt32(statsDict["CompletedTasks"]) : 0;
+                    pendingTasks = statsDict.ContainsKey("PendingTasks") ? Convert.ToInt32(statsDict["PendingTasks"]) : 0;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading task stats: {ex.Message}");
+            completedTasks = 0;
+            pendingTasks = 0;
+        }
     }
 
     private void GoBack()

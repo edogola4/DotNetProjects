@@ -18,17 +18,47 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
     {
-        var result = await _authService.RegisterAsync(registerDto);
+        Console.WriteLine($"Register attempt: {registerDto?.Username}, {registerDto?.Email}");
+        Console.WriteLine($"Password length: {registerDto?.Password?.Length}");
         
-        if (result == null)
-            return BadRequest(new { message = "Username or email already exists" });
+        if (!ModelState.IsValid)
+        {
+            Console.WriteLine("ModelState invalid:");
+            foreach (var error in ModelState)
+            {
+                Console.WriteLine($"  {error.Key}: {string.Join(", ", error.Value.Errors.Select(e => e.ErrorMessage))}");
+            }
+            return BadRequest(ModelState);
+        }
+        
+        try
+        {
+            var result = await _authService.RegisterAsync(registerDto);
+            
+            if (result == null)
+            {
+                Console.WriteLine("Registration failed - user already exists");
+                return BadRequest(new { message = "Username or email already exists" });
+            }
 
-        return Ok(result);
+            Console.WriteLine("Registration successful");
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Registration error: {ex.Message}");
+            return BadRequest(new { message = "Registration failed" });
+        }
     }
 
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+        
         var result = await _authService.LoginAsync(loginDto);
         
         if (result == null)

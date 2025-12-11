@@ -225,6 +225,14 @@ public class TaskService : ITaskService
         return tasks.Select(MapToDto);
     }
 
+    public async Task<object> GetTaskStatsAsync(Guid userId)
+    {
+        var completedCount = await _context.Tasks.CountAsync(t => t.UserId == userId && t.IsCompleted);
+        var pendingCount = await _context.Tasks.CountAsync(t => t.UserId == userId && !t.IsCompleted);
+        
+        return new { CompletedTasks = completedCount, PendingTasks = pendingCount };
+    }
+
     private static TaskResponseDto MapToDto(TaskItem task)
     {
         return new TaskResponseDto

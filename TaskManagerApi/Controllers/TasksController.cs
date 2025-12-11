@@ -103,4 +103,11 @@ public class TasksController : ControllerBase
         var tasks = await _taskService.GetUpcomingTasksAsync(GetUserId(), days);
         return Ok(tasks);
     }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetTaskStats()
+    {
+        var stats = await _taskService.GetTaskStatsAsync(GetUserId());
+        return Ok(stats);
+    }
 }
