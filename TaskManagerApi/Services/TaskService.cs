@@ -149,7 +149,16 @@ public class TaskService : ITaskService
 
         task.IsCompleted = true;
         task.UpdatedAt = DateTime.UtcNow;
-        await _context.SaveChangesAsync();
+        
+        try
+        {
+            await _context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            // Task was already modified/deleted, return null
+            return null;
+        }
 
         var result = MapToDto(task);
         await _hubContext.Clients.User(userId.ToString()).SendAsync("TaskUpdated", result);
@@ -214,6 +223,14 @@ public class TaskService : ITaskService
             .ToListAsync();
 
         return tasks.Select(MapToDto);
+    }
+
+    public async Task<object> GetTaskStatsAsync(Guid userId)
+    {
+        var completedCount = await _context.Tasks.CountAsync(t => t.UserId == userId && t.IsCompleted);
+        var pendingCount = await _context.Tasks.CountAsync(t => t.UserId == userId && !t.IsCompleted);
+        
+        return new { CompletedTasks = completedCount, PendingTasks = pendingCount };
     }
 
     private static TaskResponseDto MapToDto(TaskItem task)

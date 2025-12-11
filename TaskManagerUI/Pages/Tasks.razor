@@ -1,0 +1,347 @@
+@page "/"
+@using TaskManagerUI.DTOs
+@using TaskManagerUI.Services
+@using TaskManagerUI.Models
+@inject ApiService ApiService
+@inject AuthService AuthService
+@inject SignalRService SignalRService
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<div class="container mt-4">
+    @if (!isAuthenticated)
+    {
+        <div class="text-center">
+            <h3>Please login to view your tasks</h3>
+            <a href="/login" class="btn btn-primary">Login</a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                @if (currentUser != null)
+                {
+                    <h2>Welcome back, @currentUser.Username! 👋</h2>
+                    <p class="text-muted mb-0">Here are your tasks for today</p>
+                }
+                else
+                {
+                    <h2>My Tasks</h2>
+                }
+            </div>
+            <div>
+                <span class="badge @(connectionStatus == "Connected" ? "bg-success" : "bg-danger") me-2">
+                    SignalR: @connectionStatus
+                </span>
+                <button class="btn btn-primary" @onclick="ShowCreateForm">
+                    <i class="bi bi-plus"></i> New Task
+                </button>
+                <button class="btn btn-outline-secondary ms-2" @onclick="Logout">Logout</button>
+            </div>
+        </div>
+
+        @if (showCreateForm)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Create New Task</h5>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="newTask" OnValidSubmit="CreateTask">
+                        <DataAnnotationsValidator />
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Title</label>
+                                    <InputText @bind-Value="newTask.Title" class="form-control" />
+                                    <ValidationMessage For="() => newTask.Title" class="text-danger" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Priority</label>
+                                    <InputSelect @bind-Value="newTask.Priority" class="form-select">
+                                        <option value="@Priority.Low">Low</option>
+                                        <option value="@Priority.Medium">Medium</option>
+                                        <option value="@Priority.High">High</option>
+                                        <option value="@Priority.Urgent">Urgent</option>
+                                    </InputSelect>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Due Date</label>
+                                    <InputDate @bind-Value="newTask.DueDate" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <InputTextArea @bind-Value="newTask.Description" class="form-control" rows="3" />
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-success" disabled="@isCreating">
+                                @if (isCreating)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                Create Task
+                            </button>
+                            <button type="button" class="btn btn-secondary ms-2" @onclick="CancelCreate">Cancel</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        }
+
+        @if (isLoading)
+        {
+            <div class="text-center">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        }
+        else if (tasks.Any())
+        {
+            <div class="row">
+                @foreach (var task in tasks.OrderBy(t => t.IsCompleted).ThenByDescending(t => t.Priority))
+                {
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card @(task.IsCompleted ? "border-success" : GetPriorityBorderClass(task.Priority))">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="card-title @(task.IsCompleted ? "text-decoration-line-through text-muted" : "")">
+                                        @task.Title
+                                    </h6>
+                                    <span class="badge @GetPriorityBadgeClass(task.Priority)">
+                                        @task.Priority
+                                    </span>
+                                </div>
+                                
+                                @if (!string.IsNullOrEmpty(task.Description))
+                                {
+                                    <p class="card-text small @(task.IsCompleted ? "text-muted" : "")">
+                                        @task.Description
+                                    </p>
+                                }
+                                
+                                @if (task.DueDate.HasValue)
+                                {
+                                    <p class="card-text">
+                                        <small class="@GetDueDateClass(task.DueDate.Value, task.IsCompleted)">
+                                            Due: @task.DueDate.Value.ToString("MMM dd, yyyy")
+                                        </small>
+                                    </p>
+                                }
+                                
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        Created: @task.CreatedAt.ToString("MMM dd")
+                                    </small>
+                                    <div>
+                                        @if (!task.IsCompleted)
+                                        {
+                                            <button class="btn btn-sm btn-outline-success me-1" 
+                                                    @onclick="() => CompleteTask(task.Id)">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                        }
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                @onclick="() => DeleteTask(task.Id)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-center">
+                <h4>No tasks yet</h4>
+                <p>Create your first task to get started!</p>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<TaskResponseDto> tasks = new();
+    private CreateTaskDto newTask = new();
+    private bool isAuthenticated = false;
+    private bool isLoading = true;
+    private bool isCreating = false;
+    private bool showCreateForm = false;
+    private string connectionStatus = "Disconnected";
+    private AuthResponseDto? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        
+        if (isAuthenticated)
+        {
+            currentUser = await AuthService.GetUserDataAsync();
+            await LoadTasks();
+            await SetupSignalR();
+        }
+        
+        isLoading = false;
+        AuthService.AuthStateChanged += OnAuthStateChanged;
+    }
+
+    private async Task LoadTasks()
+    {
+        tasks = await ApiService.GetTasksAsync();
+        StateHasChanged();
+    }
+
+    private async Task SetupSignalR()
+    {
+        var token = await AuthService.GetTokenAsync();
+        SignalRService.TaskCreated += OnTaskCreated;
+        SignalRService.TaskUpdated += OnTaskUpdated;
+        SignalRService.TaskDeleted += OnTaskDeleted;
+        SignalRService.ConnectionStatusChanged += OnConnectionStatusChanged;
+        
+        await SignalRService.StartAsync("https://localhost:7001/hubs/tasks", token);
+    }
+
+    private void OnTaskCreated(TaskResponseDto task)
+    {
+        tasks.Add(task);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnTaskUpdated(TaskResponseDto task)
+    {
+        var index = tasks.FindIndex(t => t.Id == task.Id);
+        if (index >= 0)
+        {
+            tasks[index] = task;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnTaskDeleted(Guid taskId)
+    {
+        tasks.RemoveAll(t => t.Id == taskId);
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnConnectionStatusChanged(string status)
+    {
+        connectionStatus = status;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnAuthStateChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            isAuthenticated = await AuthService.IsAuthenticatedAsync();
+            if (isAuthenticated)
+            {
+                currentUser = await AuthService.GetUserDataAsync();
+                await LoadTasks();
+                await SetupSignalR();
+            }
+            else
+            {
+                currentUser = null;
+                tasks.Clear();
+                await SignalRService.StopAsync();
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void ShowCreateForm()
+    {
+        showCreateForm = true;
+        newTask = new CreateTaskDto();
+    }
+
+    private void CancelCreate()
+    {
+        showCreateForm = false;
+        newTask = new CreateTaskDto();
+    }
+
+    private async Task CreateTask()
+    {
+        isCreating = true;
+        
+        // Ensure DueDate is UTC if provided
+        if (newTask.DueDate.HasValue)
+        {
+            newTask.DueDate = DateTime.SpecifyKind(newTask.DueDate.Value, DateTimeKind.Utc);
+        }
+        
+        var createdTask = await ApiService.CreateTaskAsync(newTask);
+        if (createdTask != null)
+        {
+            showCreateForm = false;
+            newTask = new CreateTaskDto();
+        }
+        isCreating = false;
+    }
+
+    private async Task CompleteTask(Guid taskId)
+    {
+        await ApiService.CompleteTaskAsync(taskId);
+    }
+
+    private async Task DeleteTask(Guid taskId)
+    {
+        await ApiService.DeleteTaskAsync(taskId);
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+
+    private string GetPriorityBorderClass(Priority priority) => priority switch
+    {
+        Priority.Urgent => "border-danger",
+        Priority.High => "border-warning",
+        Priority.Medium => "border-info",
+        Priority.Low => "border-secondary",
+        _ => "border-secondary"
+    };
+
+    private string GetPriorityBadgeClass(Priority priority) => priority switch
+    {
+        Priority.Urgent => "bg-danger",
+        Priority.High => "bg-warning text-dark",
+        Priority.Medium => "bg-info",
+        Priority.Low => "bg-secondary",
+        _ => "bg-secondary"
+    };
+
+    private string GetDueDateClass(DateTime dueDate, bool isCompleted)
+    {
+        if (isCompleted) return "text-muted";
+        return dueDate < DateTime.Now ? "text-danger" : "text-muted";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        AuthService.AuthStateChanged -= OnAuthStateChanged;
+        if (SignalRService != null)
+        {
+            SignalRService.TaskCreated -= OnTaskCreated;
+            SignalRService.TaskUpdated -= OnTaskUpdated;
+            SignalRService.TaskDeleted -= OnTaskDeleted;
+            SignalRService.ConnectionStatusChanged -= OnConnectionStatusChanged;
+            await SignalRService.DisposeAsync();
+        }
+    }
+}

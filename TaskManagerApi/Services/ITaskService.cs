@@ -15,4 +15,5 @@ public interface ITaskService
     Task RemoveTagsFromTaskAsync(Guid userId, Guid taskId, List<string> tagNames);
     Task<IEnumerable<TaskResponseDto>> GetOverdueTasksAsync(Guid userId);
     Task<IEnumerable<TaskResponseDto>> GetUpcomingTasksAsync(Guid userId, int days);
+    Task<object> GetTaskStatsAsync(Guid userId);
 }

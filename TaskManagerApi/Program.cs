@@ -34,8 +34,33 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? 
                 throw new InvalidOperationException("JWT Secret not configured")))
+        };        
+        // Allow JWT tokens in SignalR WebSocket connections
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
         };
     });
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("BlazorUI", policy =>
+    {
+        policy.SetIsOriginAllowed(_ => true)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
 
 builder.Services.AddSignalR();
 builder.Services.AddControllers();
@@ -80,6 +105,7 @@ else
 }
 
 app.UseHttpsRedirection();
+app.UseCors("BlazorUI");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
