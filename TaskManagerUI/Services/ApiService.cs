@@ -39,12 +39,24 @@ public class ApiService
             : null;
     }
 
-    public async Task<AuthResponseDto?> RegisterAsync(RegisterDto registerDto)
+    public async Task<(AuthResponseDto? result, string? error)> RegisterAsync(RegisterDto registerDto)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/auth/register", registerDto, _jsonOptions);
-        return response.IsSuccessStatusCode 
-            ? await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions)
-            : null;
+        try
+        {
+            var response = await _httpClient.PostAsJsonAsync("api/auth/register", registerDto, _jsonOptions);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<AuthResponseDto>(_jsonOptions);
+                return (result, null);
+            }
+            
+            var errorContent = await response.Content.ReadAsStringAsync();
+            return (null, errorContent);
+        }
+        catch (Exception ex)
+        {
+            return (null, ex.Message);
+        }
     }
 
     // Task endpoints

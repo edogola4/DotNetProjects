@@ -32,17 +32,17 @@ public class AuthService
         return false;
     }
 
-    public async Task<bool> RegisterAsync(RegisterDto registerDto)
+    public async Task<(bool success, string? error)> RegisterAsync(RegisterDto registerDto)
     {
-        var response = await _apiService.RegisterAsync(registerDto);
+        var (response, error) = await _apiService.RegisterAsync(registerDto);
         if (response != null)
         {
             await SaveAuthDataAsync(response);
             _apiService.SetAuthToken(response.Token);
             AuthStateChanged?.Invoke();
-            return true;
+            return (true, null);
         }
-        return false;
+        return (false, error);
     }
 
     public async Task LogoutAsync()
