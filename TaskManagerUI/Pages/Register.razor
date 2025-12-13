@@ -1,58 +1,97 @@
 @page "/register"
 @using TaskManagerUI.DTOs
 @using TaskManagerUI.Services
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="text-center">Register</h3>
+<div class="register-container">
+    <div class="register-card">
+        <div class="register-header">
+            <h2>Create Account</h2>
+            <p class="text-muted">Join us to manage your tasks efficiently</p>
+        </div>
+
+        <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+            
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="validation-errors">
+                    <strong>Registration Failed:</strong>
+                    <div class="mt-2">@((MarkupString)errorMessage)</div>
                 </div>
-                <div class="card-body">
-                    <EditForm Model="registerModel" OnValidSubmit="HandleRegister">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary class="text-danger" />
+            }
 
-                        <div class="mb-3">
-                            <label class="form-label">Username</label>
-                            <InputText @bind-Value="registerModel.Username" class="form-control" />
-                            <ValidationMessage For="() => registerModel.Username" class="text-danger" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Email</label>
-                            <InputText @bind-Value="registerModel.Email" class="form-control" />
-                            <ValidationMessage For="() => registerModel.Email" class="text-danger" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <InputText @bind-Value="registerModel.Password" type="password" class="form-control" />
-                            <ValidationMessage For="() => registerModel.Password" class="text-danger" />
-                        </div>
-
-                        @if (!string.IsNullOrEmpty(errorMessage))
-                        {
-                            <div class="alert alert-danger">@errorMessage</div>
-                        }
-
-                        <button type="submit" class="btn btn-primary w-100" disabled="@isLoading">
-                            @if (isLoading)
-                            {
-                                <span class="spinner-border spinner-border-sm me-2"></span>
-                            }
-                            Register
-                        </button>
-                    </EditForm>
-
-                    <div class="text-center mt-3">
-                        <a href="/login">Already have an account? Login</a>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <InputText 
+                    id="username" 
+                    class="form-control" 
+                    @bind-Value="registerModel.Username" 
+                    placeholder="Enter username" />
+                <ValidationMessage For="() => registerModel.Username" class="validation-message" />
             </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <InputText 
+                    id="email" 
+                    type="email"
+                    class="form-control" 
+                    @bind-Value="registerModel.Email" 
+                    placeholder="your.email@example.com" />
+                <ValidationMessage For="() => registerModel.Email" class="validation-message" />
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-input-wrapper">
+                    <InputText 
+                        id="password" 
+                        type="@(showPassword ? "text" : "password")"
+                        class="form-control" 
+                        @bind-Value="registerModel.Password" 
+                        placeholder="Create a strong password" />
+                    <button 
+                        type="button" 
+                        class="password-toggle" 
+                        @onclick="TogglePasswordVisibility"
+                        tabindex="-1">
+                        @(showPassword ? "👁️" : "👁️‍🗨️")
+                    </button>
+                </div>
+                <small class="form-text text-muted">Minimum 8 characters, include uppercase, lowercase, numbers and symbols</small>
+                <ValidationMessage For="() => registerModel.Password" class="validation-message" />
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <InputText 
+                    id="confirmPassword" 
+                    type="password"
+                    class="form-control" 
+                    @bind-Value="registerModel.ConfirmPassword" 
+                    placeholder="Re-enter your password" />
+                <ValidationMessage For="() => registerModel.ConfirmPassword" class="validation-message" />
+            </div>
+
+            <button type="submit" class="btn-register" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm me-2"></span>
+                    <span>Creating account...</span>
+                }
+                else
+                {
+                    <span>Create Account</span>
+                }
+            </button>
+        </EditForm>
+
+        <div class="register-footer">
+            <p>Already have an account? <a href="/login">Sign in</a></p>
         </div>
     </div>
 </div>
@@ -61,6 +100,12 @@
     private RegisterDto registerModel = new();
     private string errorMessage = string.Empty;
     private bool isLoading = false;
+    private bool showPassword = false;
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
 
     private async Task HandleRegister()
     {
@@ -69,23 +114,60 @@
 
         try
         {
-            var success = await AuthService.RegisterAsync(registerModel);
+            var (success, error) = await AuthService.RegisterAsync(registerModel);
             if (success)
             {
                 Navigation.NavigateTo("/");
             }
             else
             {
-                errorMessage = "Registration failed. Please try again.";
+                errorMessage = ParseErrorMessage(error);
             }
         }
         catch (Exception ex)
         {
-            errorMessage = "An error occurred during registration.";
+            errorMessage = $"An error occurred: {ex.Message}";
         }
         finally
         {
             isLoading = false;
         }
+    }
+
+    private string ParseErrorMessage(string? error)
+    {
+        if (string.IsNullOrEmpty(error))
+            return "Registration failed. Please try again.";
+
+        try
+        {
+            var jsonDoc = JsonDocument.Parse(error);
+            if (jsonDoc.RootElement.TryGetProperty("errors", out var errorsElement))
+            {
+                var errorList = new List<string>();
+                foreach (var field in errorsElement.EnumerateObject())
+                {
+                    var fieldName = field.Name;
+                    var messages = field.Value.EnumerateArray().Select(x => x.GetString()).Where(x => !string.IsNullOrEmpty(x));
+                    foreach (var message in messages)
+                    {
+                        errorList.Add($"<strong>{fieldName}:</strong> {message}");
+                    }
+                }
+                return errorList.Any() ? string.Join("<br/>", errorList) : "Please check your input and try again.";
+            }
+            
+            if (jsonDoc.RootElement.TryGetProperty("message", out var messageElement))
+            {
+                return messageElement.GetString() ?? "Registration failed.";
+            }
+        }
+        catch
+        {
+        }
+
+        return error.Contains("Username") || error.Contains("Email") || error.Contains("Password") 
+            ? error 
+            : "Registration failed. Please check your input and try again.";
     }
 }

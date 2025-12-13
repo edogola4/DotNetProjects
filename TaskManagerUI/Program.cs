@@ -10,18 +10,14 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 // Configure HttpClient for API
 builder.Services.AddScoped(sp => new HttpClient 
 { 
-    BaseAddress = new Uri("https://localhost:7001/") // API base URL
+    BaseAddress = new Uri("https://localhost:7041/") // API base URL
 });
 
-// Register services
+// Register services in correct order
 builder.Services.AddScoped<ApiService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<SignalRService>();
 
 var app = builder.Build();
-
-// Initialize auth service
-var authService = app.Services.GetRequiredService<AuthService>();
-await authService.InitializeAsync();
 
 await app.RunAsync();

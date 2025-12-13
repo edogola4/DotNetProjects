@@ -8,163 +8,81 @@
 @inject NavigationManager Navigation
 @implements IAsyncDisposable
 
-<div class="container mt-4">
+<div class="container-fluid py-4">
     @if (!isAuthenticated)
     {
         <div class="text-center">
-            <h3>Please login to view your tasks</h3>
+            <h3 class="text-muted">Please login to view your tasks</h3>
             <a href="/login" class="btn btn-primary">Login</a>
         </div>
     }
     else
     {
+        <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
+                <h2 class="mb-1">My Tasks</h2>
                 @if (currentUser != null)
                 {
-                    <h2>Welcome back, @currentUser.Username! 👋</h2>
-                    <p class="text-muted mb-0">Here are your tasks for today</p>
-                }
-                else
-                {
-                    <h2>My Tasks</h2>
+                    <p class="text-muted mb-0">Welcome back, @currentUser.Username</p>
                 }
             </div>
-            <div>
-                <span class="badge @(connectionStatus == "Connected" ? "bg-success" : "bg-danger") me-2">
-                    SignalR: @connectionStatus
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge @(connectionStatus == "Connected" ? "bg-success" : "bg-secondary")">
+                    @connectionStatus
                 </span>
-                <button class="btn btn-primary" @onclick="ShowCreateForm">
+                <button class="btn btn-primary" @onclick="ToggleForm">
                     <i class="bi bi-plus"></i> New Task
                 </button>
-                <button class="btn btn-outline-secondary ms-2" @onclick="Logout">Logout</button>
+                <button class="btn btn-outline-secondary" @onclick="Logout">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
             </div>
         </div>
 
-        @if (showCreateForm)
+        <!-- Task Form Component -->
+        @if (showForm)
         {
-            <div class="card mb-4">
-                <div class="card-header">
-                    <h5>Create New Task</h5>
-                </div>
-                <div class="card-body">
-                    <EditForm Model="newTask" OnValidSubmit="CreateTask">
-                        <DataAnnotationsValidator />
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Title</label>
-                                    <InputText @bind-Value="newTask.Title" class="form-control" />
-                                    <ValidationMessage For="() => newTask.Title" class="text-danger" />
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label class="form-label">Priority</label>
-                                    <InputSelect @bind-Value="newTask.Priority" class="form-select">
-                                        <option value="@Priority.Low">Low</option>
-                                        <option value="@Priority.Medium">Medium</option>
-                                        <option value="@Priority.High">High</option>
-                                        <option value="@Priority.Urgent">Urgent</option>
-                                    </InputSelect>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="mb-3">
-                                    <label class="form-label">Due Date</label>
-                                    <InputDate @bind-Value="newTask.DueDate" class="form-control" />
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-                            <InputTextArea @bind-Value="newTask.Description" class="form-control" rows="3" />
-                        </div>
-                        <div>
-                            <button type="submit" class="btn btn-success" disabled="@isCreating">
-                                @if (isCreating)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2"></span>
-                                }
-                                Create Task
-                            </button>
-                            <button type="button" class="btn btn-secondary ms-2" @onclick="CancelCreate">Cancel</button>
-                        </div>
-                    </EditForm>
-                </div>
-            </div>
+            <TaskForm Model="newTask" 
+                     IsCreating="isCreating" 
+                     OnSubmit="CreateTask" 
+                     OnCancel="CancelForm" />
         }
 
+        <!-- Loading State -->
         @if (isLoading)
         {
-            <div class="text-center">
-                <div class="spinner-border" role="status">
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
         }
+        <!-- Task List -->
         else if (tasks.Any())
         {
-            <div class="row">
+            <div class="row g-3">
                 @foreach (var task in tasks.OrderBy(t => t.IsCompleted).ThenByDescending(t => t.Priority))
                 {
-                    <div class="col-md-6 col-lg-4 mb-3">
-                        <div class="card @(task.IsCompleted ? "border-success" : GetPriorityBorderClass(task.Priority))">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h6 class="card-title @(task.IsCompleted ? "text-decoration-line-through text-muted" : "")">
-                                        @task.Title
-                                    </h6>
-                                    <span class="badge @GetPriorityBadgeClass(task.Priority)">
-                                        @task.Priority
-                                    </span>
-                                </div>
-                                
-                                @if (!string.IsNullOrEmpty(task.Description))
-                                {
-                                    <p class="card-text small @(task.IsCompleted ? "text-muted" : "")">
-                                        @task.Description
-                                    </p>
-                                }
-                                
-                                @if (task.DueDate.HasValue)
-                                {
-                                    <p class="card-text">
-                                        <small class="@GetDueDateClass(task.DueDate.Value, task.IsCompleted)">
-                                            Due: @task.DueDate.Value.ToString("MMM dd, yyyy")
-                                        </small>
-                                    </p>
-                                }
-                                
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <small class="text-muted">
-                                        Created: @task.CreatedAt.ToString("MMM dd")
-                                    </small>
-                                    <div>
-                                        @if (!task.IsCompleted)
-                                        {
-                                            <button class="btn btn-sm btn-outline-success me-1" 
-                                                    @onclick="() => CompleteTask(task.Id)">
-                                                <i class="bi bi-check"></i>
-                                            </button>
-                                        }
-                                        <button class="btn btn-sm btn-outline-danger" 
-                                                @onclick="() => DeleteTask(task.Id)">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="col-md-6 col-lg-4" @key="task.Id">
+                        <TaskItem Task="task" 
+                                 OnComplete="CompleteTask" 
+                                 OnDelete="DeleteTask"
+                                 OnEdit="EditTask" />
                     </div>
                 }
             </div>
         }
+        <!-- Empty State -->
         else
         {
-            <div class="text-center">
-                <h4>No tasks yet</h4>
-                <p>Create your first task to get started!</p>
+            <div class="text-center py-5">
+                <i class="bi bi-list-task text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No tasks yet</h4>
+                <p class="text-muted">Create your first task to get started!</p>
+                <button class="btn btn-primary" @onclick="ToggleForm">
+                    <i class="bi bi-plus"></i> Create Task
+                </button>
             </div>
         }
     }
@@ -176,19 +94,38 @@
     private bool isAuthenticated = false;
     private bool isLoading = true;
     private bool isCreating = false;
-    private bool showCreateForm = false;
+    private bool showForm = false;
     private string connectionStatus = "Disconnected";
     private AuthResponseDto? currentUser;
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthService.InitializeAsync();
         isAuthenticated = await AuthService.IsAuthenticatedAsync();
         
         if (isAuthenticated)
         {
-            currentUser = await AuthService.GetUserDataAsync();
-            await LoadTasks();
-            await SetupSignalR();
+            // Ensure token is set on ApiService
+            var token = await AuthService.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                ApiService.SetAuthToken(token);
+                currentUser = await AuthService.GetUserDataAsync();
+                await LoadTasks();
+                await SetupSignalR();
+            }
+            else
+            {
+                // Token is missing, redirect to login
+                Navigation.NavigateTo("/login");
+                return;
+            }
+        }
+        else
+        {
+            // Not authenticated, redirect to login
+            Navigation.NavigateTo("/login");
+            return;
         }
         
         isLoading = false;
@@ -197,8 +134,15 @@
 
     private async Task LoadTasks()
     {
-        tasks = await ApiService.GetTasksAsync();
-        StateHasChanged();
+        try
+        {
+            tasks = await ApiService.GetTasksAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading tasks: {ex.Message}");
+        }
     }
 
     private async Task SetupSignalR()
@@ -209,21 +153,102 @@
         SignalRService.TaskDeleted += OnTaskDeleted;
         SignalRService.ConnectionStatusChanged += OnConnectionStatusChanged;
         
-        await SignalRService.StartAsync("https://localhost:7001/hubs/tasks", token);
+        await SignalRService.StartAsync("https://localhost:7041/hubs/tasks", token);
     }
 
-    private void OnTaskCreated(TaskResponseDto task)
+    private void ToggleForm()
     {
-        tasks.Add(task);
+        showForm = !showForm;
+        if (showForm)
+        {
+            newTask = new CreateTaskDto();
+        }
+    }
+
+    private void CancelForm()
+    {
+        showForm = false;
+        newTask = new CreateTaskDto();
+    }
+
+    private async Task CreateTask()
+    {
+        isCreating = true;
+        
+        try
+        {
+            if (newTask.DueDate.HasValue)
+            {
+                newTask.DueDate = DateTime.SpecifyKind(newTask.DueDate.Value, DateTimeKind.Utc);
+            }
+            
+            var createdTask = await ApiService.CreateTaskAsync(newTask);
+            if (createdTask != null)
+            {
+                showForm = false;
+                newTask = new CreateTaskDto();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating task: {ex.Message}");
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+
+    private async Task CompleteTask(Guid taskId)
+    {
+        try
+        {
+            await ApiService.CompleteTaskAsync(taskId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error completing task: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteTask(Guid taskId)
+    {
+        try
+        {
+            await ApiService.DeleteTaskAsync(taskId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting task: {ex.Message}");
+        }
+    }
+
+    private async Task EditTask(Guid taskId)
+    {
+        // TODO: Implement edit functionality
+        Console.WriteLine($"Edit task: {taskId}");
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+
+    // SignalR Event Handlers
+    private void OnTaskCreated(TaskResponseDto taskResponse)
+    {
+        tasks.Add(taskResponse);
         InvokeAsync(StateHasChanged);
     }
 
-    private void OnTaskUpdated(TaskResponseDto task)
+    private void OnTaskUpdated(TaskResponseDto taskResponse)
     {
-        var index = tasks.FindIndex(t => t.Id == task.Id);
+        var index = tasks.FindIndex(t => t.Id == taskResponse.Id);
         if (index >= 0)
         {
-            tasks[index] = task;
+            tasks[index] = taskResponse;
             InvokeAsync(StateHasChanged);
         }
     }
@@ -247,6 +272,13 @@
             isAuthenticated = await AuthService.IsAuthenticatedAsync();
             if (isAuthenticated)
             {
+                // Ensure token is set on ApiService
+                var token = await AuthService.GetTokenAsync();
+                if (!string.IsNullOrEmpty(token))
+                {
+                    ApiService.SetAuthToken(token);
+                }
+                
                 currentUser = await AuthService.GetUserDataAsync();
                 await LoadTasks();
                 await SetupSignalR();
@@ -255,81 +287,11 @@
             {
                 currentUser = null;
                 tasks.Clear();
+                ApiService.ClearAuthToken();
                 await SignalRService.StopAsync();
             }
             StateHasChanged();
         });
-    }
-
-    private void ShowCreateForm()
-    {
-        showCreateForm = true;
-        newTask = new CreateTaskDto();
-    }
-
-    private void CancelCreate()
-    {
-        showCreateForm = false;
-        newTask = new CreateTaskDto();
-    }
-
-    private async Task CreateTask()
-    {
-        isCreating = true;
-        
-        // Ensure DueDate is UTC if provided
-        if (newTask.DueDate.HasValue)
-        {
-            newTask.DueDate = DateTime.SpecifyKind(newTask.DueDate.Value, DateTimeKind.Utc);
-        }
-        
-        var createdTask = await ApiService.CreateTaskAsync(newTask);
-        if (createdTask != null)
-        {
-            showCreateForm = false;
-            newTask = new CreateTaskDto();
-        }
-        isCreating = false;
-    }
-
-    private async Task CompleteTask(Guid taskId)
-    {
-        await ApiService.CompleteTaskAsync(taskId);
-    }
-
-    private async Task DeleteTask(Guid taskId)
-    {
-        await ApiService.DeleteTaskAsync(taskId);
-    }
-
-    private async Task Logout()
-    {
-        await AuthService.LogoutAsync();
-        Navigation.NavigateTo("/login");
-    }
-
-    private string GetPriorityBorderClass(Priority priority) => priority switch
-    {
-        Priority.Urgent => "border-danger",
-        Priority.High => "border-warning",
-        Priority.Medium => "border-info",
-        Priority.Low => "border-secondary",
-        _ => "border-secondary"
-    };
-
-    private string GetPriorityBadgeClass(Priority priority) => priority switch
-    {
-        Priority.Urgent => "bg-danger",
-        Priority.High => "bg-warning text-dark",
-        Priority.Medium => "bg-info",
-        Priority.Low => "bg-secondary",
-        _ => "bg-secondary"
-    };
-
-    private string GetDueDateClass(DateTime dueDate, bool isCompleted)
-    {
-        if (isCompleted) return "text-muted";
-        return dueDate < DateTime.Now ? "text-danger" : "text-muted";
     }
 
     public async ValueTask DisposeAsync()

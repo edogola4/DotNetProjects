@@ -32,7 +32,8 @@ public class TasksController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetTasks([FromQuery] TaskFilterParameters parameters)
     {
-        var pagedTasks = await _taskService.GetUserTasksAsync(GetUserId(), parameters);
+        var userId = GetUserId();
+        var pagedTasks = await _taskService.GetUserTasksAsync(userId, parameters);
         
         var metadata = new
         {
@@ -107,7 +108,8 @@ public class TasksController : ControllerBase
     [HttpGet("stats")]
     public async Task<IActionResult> GetTaskStats()
     {
-        var stats = await _taskService.GetTaskStatsAsync(GetUserId());
+        var userId = GetUserId();
+        var stats = await _taskService.GetTaskStatsAsync(userId);
         return Ok(stats);
     }
 }

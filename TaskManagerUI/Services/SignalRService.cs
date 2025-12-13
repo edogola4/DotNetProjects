@@ -19,7 +19,7 @@ public class SignalRService : IAsyncDisposable
             {
                 if (!string.IsNullOrEmpty(accessToken))
                 {
-                    options.AccessTokenProvider = () => Task.FromResult(accessToken);
+                    options.AccessTokenProvider = () => Task.FromResult(accessToken)!;
                 }
             });
 

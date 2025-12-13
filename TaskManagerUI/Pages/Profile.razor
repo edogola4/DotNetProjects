@@ -39,8 +39,17 @@
                         </div>
                         
                         <div class="row mt-4">
-                            <div class="col-md-6">
-                                <div class="card border-primary">
+                            <div class="col-md-4">
+                                <div class="card border-info">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-list-task text-info fs-1"></i>
+                                        <h5 class="card-title mt-2">@(completedTasks + pendingTasks)</h5>
+                                        <p class="card-text text-muted">Total Tasks</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-success">
                                     <div class="card-body text-center">
                                         <i class="bi bi-check-circle-fill text-success fs-1"></i>
                                         <h5 class="card-title mt-2">@completedTasks</h5>
@@ -48,7 +57,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="card border-warning">
                                     <div class="card-body text-center">
                                         <i class="bi bi-clock-fill text-warning fs-1"></i>
@@ -60,9 +69,14 @@
                         </div>
 
                         <div class="mt-4 d-flex justify-content-between">
-                            <button class="btn btn-outline-secondary" @onclick="GoBack">
-                                <i class="bi bi-arrow-left"></i> Back to Tasks
-                            </button>
+                            <div>
+                                <button class="btn btn-outline-secondary me-2" @onclick="GoBack">
+                                    <i class="bi bi-arrow-left"></i> Back to Tasks
+                                </button>
+                                <button class="btn btn-outline-primary" @onclick="RefreshStats">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh Stats
+                                </button>
+                            </div>
                             <button class="btn btn-danger" @onclick="HandleLogout">
                                 <i class="bi bi-box-arrow-right"></i> Logout
                             </button>
@@ -88,11 +102,19 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await AuthService.InitializeAsync();
         var isAuthenticated = await AuthService.IsAuthenticatedAsync();
         if (!isAuthenticated)
         {
             Navigation.NavigateTo("/login");
             return;
+        }
+
+        // Ensure token is set on ApiService
+        var token = await AuthService.GetTokenAsync();
+        if (!string.IsNullOrEmpty(token))
+        {
+            ApiService.SetAuthToken(token);
         }
 
         currentUser = await AuthService.GetUserDataAsync();
@@ -103,18 +125,21 @@
     {
         try
         {
+            Console.WriteLine("Loading task stats...");
             var stats = await ApiService.GetTaskStatsAsync();
             if (stats != null)
             {
-                var statsJson = System.Text.Json.JsonSerializer.Serialize(stats);
-                var statsDict = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(statsJson);
-                
-                if (statsDict != null)
-                {
-                    completedTasks = statsDict.ContainsKey("CompletedTasks") ? Convert.ToInt32(statsDict["CompletedTasks"]) : 0;
-                    pendingTasks = statsDict.ContainsKey("PendingTasks") ? Convert.ToInt32(statsDict["PendingTasks"]) : 0;
-                }
+                Console.WriteLine($"Stats loaded: Completed={stats.CompletedTasks}, Pending={stats.PendingTasks}");
+                completedTasks = stats.CompletedTasks;
+                pendingTasks = stats.PendingTasks;
             }
+            else
+            {
+                Console.WriteLine("Stats returned null");
+                completedTasks = 0;
+                pendingTasks = 0;
+            }
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -122,6 +147,11 @@
             completedTasks = 0;
             pendingTasks = 0;
         }
+    }
+
+    private async Task RefreshStats()
+    {
+        await LoadTaskStats();
     }
 
     private void GoBack()
