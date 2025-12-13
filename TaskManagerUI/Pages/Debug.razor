@@ -1,0 +1,187 @@
+@page "/debug"
+@using TaskManagerUI.DTOs
+@using TaskManagerUI.Services
+@inject ApiService ApiService
+@inject AuthService AuthService
+
+<div class="container mt-4">
+    <h2>Debug Page</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Authentication Status</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Is Authenticated:</strong> @isAuthenticated</p>
+                    <p><strong>Token Exists:</strong> @(!string.IsNullOrEmpty(token))</p>
+                    <p><strong>Token Preview:</strong> @(string.IsNullOrEmpty(token) ? "No token" : token.Substring(0, Math.Min(50, token.Length)) + "...")</p>
+                    <p><strong>Current User:</strong> @(currentUser?.Username ?? "None")</p>
+                    <button class="btn btn-secondary" @onclick="RefreshAuthStatus">Refresh Auth Status</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    @if (!isAuthenticated)
+    {
+        <p>Please login first</p>
+        <a href="/login" class="btn btn-primary">Login</a>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Task Stats</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary mb-3" @onclick="LoadStats">Load Stats</button>
+                        @if (stats != null)
+                        {
+                            <p>Completed Tasks: @stats.CompletedTasks</p>
+                            <p>Pending Tasks: @stats.PendingTasks</p>
+                            <p>Total Tasks: @stats.TotalTasks</p>
+                        }
+                        else
+                        {
+                            <p>No stats loaded</p>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Tasks List</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary mb-3" @onclick="LoadTasks">Load Tasks</button>
+                        <p>Task Count: @tasks.Count</p>
+                        @foreach (var task in tasks)
+                        {
+                            <div class="border p-2 mb-2">
+                                <strong>@task.Title</strong><br>
+                                <small>Completed: @task.IsCompleted</small><br>
+                                <small>Created: @task.CreatedAt</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Create Test Task</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <input @bind="testTaskTitle" class="form-control" placeholder="Task title" />
+                        </div>
+                        <button class="btn btn-success" @onclick="CreateTestTask" disabled="@isCreating">
+                            @if (isCreating)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            Create Test Task
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isAuthenticated = false;
+    private TaskStatsDto? stats;
+    private List<TaskResponseDto> tasks = new();
+    private string testTaskTitle = "Test Task";
+    private bool isCreating = false;
+    private string token = string.Empty;
+    private AuthResponseDto? currentUser;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAuthStatus();
+    }
+
+    private async Task RefreshAuthStatus()
+    {
+        await AuthService.InitializeAsync();
+        isAuthenticated = await AuthService.IsAuthenticatedAsync();
+        token = await AuthService.GetTokenAsync() ?? string.Empty;
+        currentUser = await AuthService.GetUserDataAsync();
+        
+        if (isAuthenticated && !string.IsNullOrEmpty(token))
+        {
+            ApiService.SetAuthToken(token);
+        }
+        
+        StateHasChanged();
+    }
+
+    private async Task LoadStats()
+    {
+        try
+        {
+            stats = await ApiService.GetTaskStatsAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading stats: {ex.Message}");
+        }
+    }
+
+    private async Task LoadTasks()
+    {
+        try
+        {
+            tasks = await ApiService.GetTasksAsync();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading tasks: {ex.Message}");
+        }
+    }
+
+    private async Task CreateTestTask()
+    {
+        if (string.IsNullOrWhiteSpace(testTaskTitle)) return;
+        
+        isCreating = true;
+        try
+        {
+            var createDto = new CreateTaskDto
+            {
+                Title = testTaskTitle,
+                Description = "Test task created from debug page",
+                Priority = Models.Priority.Medium
+            };
+            
+            var result = await ApiService.CreateTaskAsync(createDto);
+            if (result != null)
+            {
+                testTaskTitle = $"Test Task {DateTime.Now:HH:mm:ss}";
+                await LoadTasks();
+                await LoadStats();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating test task: {ex.Message}");
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+}

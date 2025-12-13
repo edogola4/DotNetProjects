@@ -105,9 +105,27 @@
         
         if (isAuthenticated)
         {
-            currentUser = await AuthService.GetUserDataAsync();
-            await LoadTasks();
-            await SetupSignalR();
+            // Ensure token is set on ApiService
+            var token = await AuthService.GetTokenAsync();
+            if (!string.IsNullOrEmpty(token))
+            {
+                ApiService.SetAuthToken(token);
+                currentUser = await AuthService.GetUserDataAsync();
+                await LoadTasks();
+                await SetupSignalR();
+            }
+            else
+            {
+                // Token is missing, redirect to login
+                Navigation.NavigateTo("/login");
+                return;
+            }
+        }
+        else
+        {
+            // Not authenticated, redirect to login
+            Navigation.NavigateTo("/login");
+            return;
         }
         
         isLoading = false;
@@ -254,6 +272,13 @@
             isAuthenticated = await AuthService.IsAuthenticatedAsync();
             if (isAuthenticated)
             {
+                // Ensure token is set on ApiService
+                var token = await AuthService.GetTokenAsync();
+                if (!string.IsNullOrEmpty(token))
+                {
+                    ApiService.SetAuthToken(token);
+                }
+                
                 currentUser = await AuthService.GetUserDataAsync();
                 await LoadTasks();
                 await SetupSignalR();
@@ -262,6 +287,7 @@
             {
                 currentUser = null;
                 tasks.Clear();
+                ApiService.ClearAuthToken();
                 await SignalRService.StopAsync();
             }
             StateHasChanged();

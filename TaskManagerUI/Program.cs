@@ -13,7 +13,7 @@ builder.Services.AddScoped(sp => new HttpClient
     BaseAddress = new Uri("https://localhost:7041/") // API base URL
 });
 
-// Register services
+// Register services in correct order
 builder.Services.AddScoped<ApiService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<SignalRService>();

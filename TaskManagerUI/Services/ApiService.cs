@@ -21,8 +21,10 @@ public class ApiService
 
     public void SetAuthToken(string token)
     {
+        Console.WriteLine($"ApiService.SetAuthToken called with token: {(string.IsNullOrEmpty(token) ? "NULL/EMPTY" : "EXISTS")}");
         _httpClient.DefaultRequestHeaders.Authorization = 
             new AuthenticationHeaderValue("Bearer", token);
+        Console.WriteLine($"Authorization header set: {_httpClient.DefaultRequestHeaders.Authorization}");
     }
 
     public void ClearAuthToken()
@@ -62,10 +64,30 @@ public class ApiService
     // Task endpoints
     public async Task<List<TaskResponseDto>> GetTasksAsync()
     {
-        var response = await _httpClient.GetAsync("api/tasks");
-        return response.IsSuccessStatusCode 
-            ? await response.Content.ReadFromJsonAsync<List<TaskResponseDto>>(_jsonOptions) ?? new()
-            : new();
+        try
+        {
+            Console.WriteLine("Calling GET api/tasks...");
+            var response = await _httpClient.GetAsync("api/tasks");
+            Console.WriteLine($"Response status: {response.StatusCode}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var tasks = await response.Content.ReadFromJsonAsync<List<TaskResponseDto>>(_jsonOptions) ?? new();
+                Console.WriteLine($"Retrieved {tasks.Count} tasks");
+                return tasks;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error getting tasks: {errorContent}");
+                return new();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception getting tasks: {ex.Message}");
+            return new();
+        }
     }
 
     public async Task<TaskResponseDto?> GetTaskAsync(Guid id)
@@ -78,10 +100,30 @@ public class ApiService
 
     public async Task<TaskResponseDto?> CreateTaskAsync(CreateTaskDto createTaskDto)
     {
-        var response = await _httpClient.PostAsJsonAsync("api/tasks", createTaskDto, _jsonOptions);
-        return response.IsSuccessStatusCode 
-            ? await response.Content.ReadFromJsonAsync<TaskResponseDto>(_jsonOptions)
-            : null;
+        try
+        {
+            Console.WriteLine($"Creating task: {createTaskDto.Title}");
+            var response = await _httpClient.PostAsJsonAsync("api/tasks", createTaskDto, _jsonOptions);
+            Console.WriteLine($"Create task response status: {response.StatusCode}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var task = await response.Content.ReadFromJsonAsync<TaskResponseDto>(_jsonOptions);
+                Console.WriteLine($"Task created successfully: {task?.Id}");
+                return task;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error creating task: {errorContent}");
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception creating task: {ex.Message}");
+            return null;
+        }
     }
 
     public async Task<bool> DeleteTaskAsync(Guid id)
@@ -96,11 +138,21 @@ public class ApiService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<dynamic?> GetTaskStatsAsync()
+    public async Task<TaskStatsDto?> GetTaskStatsAsync()
     {
-        var response = await _httpClient.GetAsync("api/tasks/stats");
-        return response.IsSuccessStatusCode 
-            ? await response.Content.ReadFromJsonAsync<dynamic>(_jsonOptions)
-            : null;
+        try
+        {
+            var response = await _httpClient.GetAsync("api/tasks/stats");
+            if (response.IsSuccessStatusCode)
+            {
+                return await response.Content.ReadFromJsonAsync<TaskStatsDto>(_jsonOptions);
+            }
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error getting task stats: {ex.Message}");
+            return null;
+        }
     }
 }

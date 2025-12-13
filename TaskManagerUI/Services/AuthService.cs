@@ -21,14 +21,17 @@ public class AuthService
 
     public async Task<bool> LoginAsync(LoginDto loginDto)
     {
+        Console.WriteLine($"Attempting login for: {loginDto.Email}");
         var response = await _apiService.LoginAsync(loginDto);
         if (response != null)
         {
+            Console.WriteLine($"Login successful, saving token and user data");
             await SaveAuthDataAsync(response);
             _apiService.SetAuthToken(response.Token);
             AuthStateChanged?.Invoke();
             return true;
         }
+        Console.WriteLine("Login failed - no response from API");
         return false;
     }
 
@@ -75,15 +78,23 @@ public class AuthService
     public async Task InitializeAsync()
     {
         var token = await GetTokenAsync();
+        Console.WriteLine($"AuthService.InitializeAsync - Token: {(string.IsNullOrEmpty(token) ? "NULL/EMPTY" : "EXISTS")}");
         if (!string.IsNullOrEmpty(token))
         {
             _apiService.SetAuthToken(token);
+            Console.WriteLine("Token set on ApiService");
+        }
+        else
+        {
+            Console.WriteLine("No token found in localStorage");
         }
     }
 
     private async Task SaveAuthDataAsync(AuthResponseDto authResponse)
     {
+        Console.WriteLine($"Saving auth data to localStorage");
         await _jsRuntime.InvokeVoidAsync("localStorage.setItem", TokenKey, authResponse.Token);
         await _jsRuntime.InvokeVoidAsync("localStorage.setItem", UserKey, JsonSerializer.Serialize(authResponse));
+        Console.WriteLine($"Auth data saved successfully");
     }
 }
