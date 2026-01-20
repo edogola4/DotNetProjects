@@ -5,10 +5,17 @@ using TaskManagerApi.Models;
 
 namespace TaskManagerApi.Services;
 
+/// <summary>
+/// Service for managing category operations including CRUD operations.
+/// </summary>
 public class CategoryService : ICategoryService
 {
     private readonly ApplicationDbContext _context;
 
+    /// <summary>
+    /// Initializes a new instance of the CategoryService.
+    /// </summary>
+    /// <param name="context">Database context.</param>
     public CategoryService(ApplicationDbContext context)
     {
         _context = context;
@@ -69,6 +76,11 @@ public class CategoryService : ICategoryService
         return true;
     }
 
+    /// <summary>
+    /// Maps a Category entity to a CategoryResponseDto.
+    /// </summary>
+    /// <param name="category">Category entity to map.</param>
+    /// <returns>Mapped category response DTO.</returns>
     private static CategoryResponseDto MapToDto(Category category)
     {
         return new CategoryResponseDto

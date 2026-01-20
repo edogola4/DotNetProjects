@@ -1,12 +1,17 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
+using TaskManagerApi.Constants;
 
 namespace TaskManagerApi.DTOs;
 
+/// <summary>
+/// DTO for category operations.
+/// </summary>
 public class CategoryDto
 {
+    /// <summary>
+    /// Category name (required).
+    /// </summary>
     [Required]
-    [StringLength(100, MinimumLength = 1)]
-    [DefaultValue("Work")]
+    [StringLength(ValidationConstants.Category.NameMaxLength, MinimumLength = ValidationConstants.Category.NameMinLength)]
     public string Name { get; set; } = string.Empty;
 }
