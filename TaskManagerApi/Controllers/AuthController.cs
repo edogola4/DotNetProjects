@@ -38,9 +38,9 @@ public class AuthController : ControllerBase
     {
         _logger.LogInformation("Register attempt for user: {Username}, {Email}", registerDto?.Username, registerDto?.Email);
         
-        if (!ModelState.IsValid)
+        if (!ModelState.IsValid || registerDto == null)
         {
-            _logger.LogWarning("Registration failed due to invalid model state");
+            _logger.LogWarning("Registration failed due to invalid model state or null data");
             return BadRequest(ModelState);
         }
         

@@ -3,15 +3,11 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace TaskManagerApi.Configuration;
 
+/*
 /// <summary>
 /// Schema filter to provide better enum documentation in Swagger.
-/// </summary>
-/// <remarks>
 /// This class is currently disabled due to compatibility issues with Swashbuckle 10 and .NET 10.
-/// The ISchemaFilter interface requires different parameter types in the newer version.
-/// TODO: Update to use IOpenApiSchema when Swashbuckle/OpenAPI fully support .NET 10.
-/// </remarks>
-/*
+/// </summary>
 public class EnumSchemaFilter : ISchemaFilter
 {
     /// <summary>

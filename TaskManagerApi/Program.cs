@@ -2,8 +2,9 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Swagger;
 using Swashbuckle.AspNetCore.SwaggerGen;
+using Swashbuckle.AspNetCore.SwaggerUI;
 using Serilog;
 using TaskManagerApi.Configuration;
 using TaskManagerApi.Data;
@@ -96,46 +97,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
-    {
-        Title = "Task Manager API",
-        Version = "v1",
-        Description = "A comprehensive task management API with authentication, real-time notifications, and advanced filtering capabilities.",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
-        {
-            Name = "Task Manager API",
-            Email = "support@taskmanager.com"
-        }
-    });
-    
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: 'Bearer 12345abcdef'",
-        Name = "Authorization",
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-        BearerFormat = "JWT"
-    });
-    
-    c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                },
-                Scheme = "Bearer",
-                Name = "Bearer",
-                In = Microsoft.OpenApi.Models.ParameterLocation.Header
-            },
-            new List<string>()
-        }
-    });
-    
     // Include XML documentation
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
@@ -146,10 +107,6 @@ builder.Services.AddSwaggerGen(c =>
     
     // Enable annotations for better documentation
     c.EnableAnnotations();
-    
-    // Configure enum descriptions
-    // TODO: Fix EnumSchemaFilter compatibility with Swashbuckle 10
-    // c.SchemaFilter<EnumSchemaFilter>();
 });
 
 var app = builder.Build();
@@ -191,4 +148,7 @@ app.MapHub<TaskHub>(signalRSettings.TaskHubPath);
 
 app.Run();
 
+/// <summary>
+/// Partial Program class for testing support.
+/// </summary>
 public partial class Program { }
