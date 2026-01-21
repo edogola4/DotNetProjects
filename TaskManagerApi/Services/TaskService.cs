@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
+using TaskManagerApi.Constants;
 using TaskManagerApi.Data;
 using TaskManagerApi.DTOs;
 using TaskManagerApi.Hubs;
@@ -7,12 +8,21 @@ using TaskManagerApi.Models;
 
 namespace TaskManagerApi.Services;
 
+/// <summary>
+/// Service for managing task operations including CRUD, filtering, and real-time notifications.
+/// </summary>
 public class TaskService : ITaskService
 {
     private readonly ApplicationDbContext _context;
     private readonly IHubContext<TaskHub> _hubContext;
     private readonly ILogger<TaskService> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the TaskService.
+    /// </summary>
+    /// <param name="context">Database context.</param>
+    /// <param name="hubContext">SignalR hub context for real-time notifications.</param>
+    /// <param name="logger">Logger instance.</param>
     public TaskService(ApplicationDbContext context, IHubContext<TaskHub> hubContext, ILogger<TaskService> logger)
     {
         _context = context;
@@ -77,10 +87,10 @@ public class TaskService : ITaskService
 
         query = parameters.SortBy.ToLower() switch
         {
-            "title" => parameters.SortOrder.ToLower() == "asc" ? query.OrderBy(t => t.Title) : query.OrderByDescending(t => t.Title),
-            "duedate" => parameters.SortOrder.ToLower() == "asc" ? query.OrderBy(t => t.DueDate) : query.OrderByDescending(t => t.DueDate),
-            "priority" => parameters.SortOrder.ToLower() == "asc" ? query.OrderBy(t => t.Priority) : query.OrderByDescending(t => t.Priority),
-            _ => parameters.SortOrder.ToLower() == "asc" ? query.OrderBy(t => t.CreatedAt) : query.OrderByDescending(t => t.CreatedAt)
+            SortingConstants.TaskSortFields.Title => parameters.SortOrder.ToLower() == SortingConstants.SortOrders.Ascending ? query.OrderBy(t => t.Title) : query.OrderByDescending(t => t.Title),
+            SortingConstants.TaskSortFields.DueDate => parameters.SortOrder.ToLower() == SortingConstants.SortOrders.Ascending ? query.OrderBy(t => t.DueDate) : query.OrderByDescending(t => t.DueDate),
+            SortingConstants.TaskSortFields.Priority => parameters.SortOrder.ToLower() == SortingConstants.SortOrders.Ascending ? query.OrderBy(t => t.Priority) : query.OrderByDescending(t => t.Priority),
+            _ => parameters.SortOrder.ToLower() == SortingConstants.SortOrders.Ascending ? query.OrderBy(t => t.CreatedAt) : query.OrderByDescending(t => t.CreatedAt)
         };
 
         var count = await query.CountAsync();
@@ -240,6 +250,11 @@ public class TaskService : ITaskService
         };
     }
 
+    /// <summary>
+    /// Maps a TaskItem entity to a TaskResponseDto.
+    /// </summary>
+    /// <param name="task">Task entity to map.</param>
+    /// <returns>Mapped task response DTO.</returns>
     private static TaskResponseDto MapToDto(TaskItem task)
     {
         return new TaskResponseDto

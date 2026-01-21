@@ -74,3 +74,7 @@ appsettings.Development.json
 # Logs
 logs/
 *.log
+
+# Personal Rules (NEVER commit to GitHub)
+.rules/
+.amazonq/rules/

@@ -1,28 +1,43 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
+using TaskManagerApi.Constants;
 using TaskManagerApi.Models;
 
 namespace TaskManagerApi.DTOs;
 
+/// <summary>
+/// DTO for updating an existing task.
+/// </summary>
 public class UpdateTaskDto
 {
-    [StringLength(200, MinimumLength = 1)]
-    [DefaultValue("Updated task title")]
+    /// <summary>
+    /// Task title (optional).
+    /// </summary>
+    [StringLength(ValidationConstants.Task.TitleMaxLength, MinimumLength = ValidationConstants.Task.TitleMinLength)]
     public string? Title { get; set; }
     
-    [StringLength(1000)]
-    [DefaultValue("Updated task description")]
+    /// <summary>
+    /// Task description (optional).
+    /// </summary>
+    [StringLength(ValidationConstants.Task.DescriptionMaxLength)]
     public string? Description { get; set; }
     
-    [DefaultValue("2025-12-31T23:59:59Z")]
+    /// <summary>
+    /// Due date (optional).
+    /// </summary>
     public DateTime? DueDate { get; set; }
     
-    [DefaultValue(true)]
+    /// <summary>
+    /// Completion status (optional).
+    /// </summary>
     public bool? IsCompleted { get; set; }
     
-    [DefaultValue(2)]
+    /// <summary>
+    /// Priority level (optional).
+    /// </summary>
     public Priority? Priority { get; set; }
     
-    [DefaultValue(null)]
+    /// <summary>
+    /// Category ID (optional).
+    /// </summary>
     public Guid? CategoryId { get; set; }
 }

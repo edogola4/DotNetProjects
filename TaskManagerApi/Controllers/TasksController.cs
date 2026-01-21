@@ -8,6 +8,9 @@ using TaskManagerApi.Services;
 
 namespace TaskManagerApi.Controllers;
 
+/// <summary>
+/// Controller for task management operations.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -15,13 +18,28 @@ public class TasksController : ControllerBase
 {
     private readonly ITaskService _taskService;
 
+    /// <summary>
+    /// Initializes a new instance of the TasksController.
+    /// </summary>
+    /// <param name="taskService">Task service.</param>
     public TasksController(ITaskService taskService)
     {
         _taskService = taskService;
     }
 
+    /// <summary>
+    /// Gets the current user's ID from JWT claims.
+    /// </summary>
+    /// <returns>User ID.</returns>
     private Guid GetUserId() => Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
+    /// <summary>
+    /// Creates a new task for the authenticated user.
+    /// </summary>
+    /// <param name="dto">Task creation data.</param>
+    /// <returns>Created task details.</returns>
+    /// <response code="201">Task created successfully.</response>
+    /// <response code="400">Invalid task data.</response>
     [HttpPost]
     public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto dto)
     {
@@ -29,6 +47,12 @@ public class TasksController : ControllerBase
         return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
     }
 
+    /// <summary>
+    /// Gets paginated tasks for the authenticated user with optional filtering.
+    /// </summary>
+    /// <param name="parameters">Filter and pagination parameters.</param>
+    /// <returns>Paginated list of tasks with metadata in X-Pagination header.</returns>
+    /// <response code="200">Tasks retrieved successfully.</response>
     [HttpGet]
     public async Task<IActionResult> GetTasks([FromQuery] TaskFilterParameters parameters)
     {
@@ -49,6 +73,13 @@ public class TasksController : ControllerBase
         return Ok(pagedTasks.Items);
     }
 
+    /// <summary>
+    /// Gets a specific task by ID for the authenticated user.
+    /// </summary>
+    /// <param name="id">Task ID.</param>
+    /// <returns>Task details.</returns>
+    /// <response code="200">Task found.</response>
+    /// <response code="404">Task not found.</response>
     [HttpGet("{id}")]
     public async Task<IActionResult> GetTask(Guid id)
     {
@@ -56,6 +87,15 @@ public class TasksController : ControllerBase
         return task == null ? NotFound() : Ok(task);
     }
 
+    /// <summary>
+    /// Updates an existing task for the authenticated user.
+    /// </summary>
+    /// <param name="id">Task ID to update.</param>
+    /// <param name="dto">Updated task data.</param>
+    /// <returns>Updated task details.</returns>
+    /// <response code="200">Task updated successfully.</response>
+    /// <response code="404">Task not found.</response>
+    /// <response code="400">Invalid task data.</response>
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTask(Guid id, [FromBody] UpdateTaskDto dto)
     {
@@ -63,6 +103,13 @@ public class TasksController : ControllerBase
         return task == null ? NotFound() : Ok(task);
     }
 
+    /// <summary>
+    /// Deletes a task for the authenticated user.
+    /// </summary>
+    /// <param name="id">Task ID to delete.</param>
+    /// <returns>No content on successful deletion.</returns>
+    /// <response code="204">Task deleted successfully.</response>
+    /// <response code="404">Task not found.</response>
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteTask(Guid id)
     {
@@ -70,6 +117,13 @@ public class TasksController : ControllerBase
         return result ? NoContent() : NotFound();
     }
 
+    /// <summary>
+    /// Marks a task as completed for the authenticated user.
+    /// </summary>
+    /// <param name="id">Task ID to complete.</param>
+    /// <returns>Updated task with completion status.</returns>
+    /// <response code="200">Task marked as completed.</response>
+    /// <response code="404">Task not found.</response>
     [HttpPatch("{id}/complete")]
     public async Task<IActionResult> CompleteTask(Guid id)
     {
@@ -77,6 +131,14 @@ public class TasksController : ControllerBase
         return task == null ? NotFound() : Ok(task);
     }
 
+    /// <summary>
+    /// Adds tags to an existing task.
+    /// </summary>
+    /// <param name="id">Task ID to add tags to.</param>
+    /// <param name="tags">List of tag names to add.</param>
+    /// <returns>No content on successful addition.</returns>
+    /// <response code="204">Tags added successfully.</response>
+    /// <response code="404">Task not found.</response>
     [HttpPost("{id}/tags")]
     public async Task<IActionResult> AddTags(Guid id, [FromBody] List<string> tags)
     {
@@ -84,6 +146,14 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Removes tags from an existing task.
+    /// </summary>
+    /// <param name="id">Task ID to remove tags from.</param>
+    /// <param name="tags">List of tag names to remove.</param>
+    /// <returns>No content on successful removal.</returns>
+    /// <response code="204">Tags removed successfully.</response>
+    /// <response code="404">Task not found.</response>
     [HttpDelete("{id}/tags")]
     public async Task<IActionResult> RemoveTags(Guid id, [FromBody] List<string> tags)
     {
@@ -91,6 +161,11 @@ public class TasksController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>
+    /// Gets all overdue tasks for the authenticated user.
+    /// </summary>
+    /// <returns>List of overdue tasks.</returns>
+    /// <response code="200">Overdue tasks retrieved successfully.</response>
     [HttpGet("overdue")]
     public async Task<IActionResult> GetOverdueTasks()
     {
@@ -98,6 +173,12 @@ public class TasksController : ControllerBase
         return Ok(tasks);
     }
 
+    /// <summary>
+    /// Gets upcoming tasks due within the specified number of days.
+    /// </summary>
+    /// <param name="days">Number of days to look ahead (default: 7).</param>
+    /// <returns>List of upcoming tasks.</returns>
+    /// <response code="200">Upcoming tasks retrieved successfully.</response>
     [HttpGet("upcoming")]
     public async Task<IActionResult> GetUpcomingTasks([FromQuery] int days = 7)
     {
@@ -105,6 +186,11 @@ public class TasksController : ControllerBase
         return Ok(tasks);
     }
 
+    /// <summary>
+    /// Gets task statistics for the authenticated user.
+    /// </summary>
+    /// <returns>Task statistics including counts by status and priority.</returns>
+    /// <response code="200">Task statistics retrieved successfully.</response>
     [HttpGet("stats")]
     public async Task<IActionResult> GetTaskStats()
     {

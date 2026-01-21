@@ -1,43 +1,48 @@
 # .NET Projects
 
-A collection of .NET 9 projects demonstrating modern development practices, including RESTful APIs, authentication, and clean architecture patterns.
+A collection of .NET 10 projects demonstrating modern development practices, including RESTful APIs, authentication, and clean architecture patterns.
 
 ## 🎯 Project Overview
 
 This repository showcases production-ready .NET development practices including:
-- RESTful API design
-- JWT authentication & authorization
+- RESTful API design with comprehensive XML documentation
+- JWT authentication & authorization with strongly-typed configuration
 - Entity Framework Core with PostgreSQL
 - SignalR for real-time notifications
 - Comprehensive testing (unit & integration)
-- Clean architecture patterns
-- API documentation with Swagger
+- Clean architecture patterns with vertical slicing
+- Environment-based configuration management
+- Cross-platform Linux deployment ready
 
 ## 🚀 Features
 
 - ✅ User authentication (register/login with JWT)
-- ✅ Task CRUD operations
-- ✅ Task categories and tags
-- ✅ Advanced search and filtering
-- ✅ Pagination support
-- ✅ Due dates and reminders
+- ✅ Task CRUD operations with filtering and pagination
+- ✅ Task categories and tags system
+- ✅ Advanced search and filtering capabilities
+- ✅ Pagination support with metadata headers
+- ✅ Due dates and reminders functionality
 - ✅ Real-time notifications with SignalR
-- ✅ Complete API documentation
+- ✅ Complete API documentation with XML comments
+- ✅ Strongly-typed configuration models
+- ✅ Environment variable support for deployment
+- ✅ Cross-platform compatibility (Linux deployment ready)
 
 ## 🛠️ Tech Stack
 
-- **Framework:** .NET 9
+- **Framework:** .NET 10
 - **Database:** PostgreSQL 14+
-- **ORM:** Entity Framework Core 9.0
-- **Authentication:** JWT Bearer tokens
-- **Real-time:** SignalR
-- **Documentation:** Swagger/OpenAPI
+- **ORM:** Entity Framework Core 10.0
+- **Authentication:** JWT Bearer tokens with strongly-typed settings
+- **Real-time:** SignalR with configurable endpoints
+- **Documentation:** Swagger/OpenAPI with XML comments
 - **Testing:** xUnit, Moq, FluentAssertions
-- **Logging:** ASP.NET Core built-in (Serilog optional)
+- **Logging:** Serilog with structured logging
+- **Configuration:** Strongly-typed settings with environment variable support
 
 ## 📋 Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - PostgreSQL 14+
 - Visual Studio 2022 / Rider / VS Code
 - Git
@@ -50,14 +55,18 @@ git clone https://github.com/edogola4/DotNetProjects.git
 cd DotNetProjects
 ```
 
-### 2. Configure database connection
-Update `TaskManagerApi/appsettings.json` with your PostgreSQL connection string:
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Host=localhost;Port=5432;Database=TaskManagerDb;Username=your_username;Password=your_password"
-  }
-}
+### 2. Configure environment variables
+Create environment variables or update `appsettings.json`:
+```bash
+# Required environment variables
+export DB_HOST="localhost"
+export DB_PORT="5432"
+export DB_NAME="TaskManagerDb"
+export DB_USER="your_username"
+export DB_PASSWORD="your_password"
+export JWT_SECRET="your-super-secure-jwt-secret-key-min-32-chars"
+export JWT_ISSUER="TaskManagerApi"
+export JWT_AUDIENCE="TaskManagerClient"
 ```
 
 ### 3. Apply database migrations
@@ -74,7 +83,7 @@ dotnet run
 The API will be available at `https://localhost:5001` (or check console output)
 
 ### 5. Explore the API
-Navigate to `https://localhost:5001/swagger` to view the interactive API documentation.
+Navigate to `https://localhost:5001/swagger` to view the interactive API documentation with comprehensive XML comments.
 
 ## 📁 Project Structure
 
@@ -94,9 +103,44 @@ DotNetProjects/
 └── TaskManagerApi.sln      # Solution file
 ```
 
+## 📝 Configuration
+
+### Environment Variables
+The application supports environment-based configuration for deployment:
+
+```bash
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=TaskManagerDb
+DB_USER=your_username
+DB_PASSWORD=your_password
+
+# JWT Configuration
+JWT_SECRET=your-super-secure-jwt-secret-key-min-32-chars
+JWT_ISSUER=TaskManagerApi
+JWT_AUDIENCE=TaskManagerClient
+JWT_EXPIRATION_MINUTES=60
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS=http://localhost:5000,https://localhost:5001
+CORS_ALLOW_ANY_ORIGIN=true
+```
+
+### Strongly-Typed Configuration
+The application uses strongly-typed configuration models:
+- `JwtSettings` - JWT token configuration
+- `CorsSettings` - CORS policy settings
+- `SignalRSettings` - SignalR hub configuration
+
+### Development vs Production
+- **Development**: Uses `appsettings.Development.json` with default values
+- **Production**: Uses environment variables for security
+- **Docker**: Environment variables passed via docker-compose or Kubernetes
+
 ## 🔑 Authentication
 
-This API uses JWT Bearer token authentication. To access protected endpoints:
+This API uses JWT Bearer token authentication with strongly-typed configuration:
 
 1. Register a new user: `POST /api/auth/register`
 2. Login: `POST /api/auth/login`
@@ -104,6 +148,12 @@ This API uses JWT Bearer token authentication. To access protected endpoints:
    ```
    Authorization: Bearer <your-token>
    ```
+
+### JWT Configuration
+- Configurable secret key via environment variables
+- Customizable token expiration
+- Support for multiple audiences and issuers
+- SignalR WebSocket authentication support
 
 ## 📚 API Endpoints
 
@@ -254,7 +304,9 @@ Project Link: [https://github.com/edogola4/DotNetProjects](https://github.com/ed
 ---
 
 **Status:** ✅ Production Ready
-**Version:** 1.0.0
+**Version:** 3.0.0
+**Framework:** .NET 10
 **Last Updated:** December 2024
 **Test Coverage:** 29 passing tests
-**Story Points Completed:** 31/60
+**Features:** Hardcoded values removed, XML documentation complete
+**Configuration:** Environment variable ready

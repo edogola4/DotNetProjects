@@ -1,32 +1,50 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
+using TaskManagerApi.Constants;
 using TaskManagerApi.Models;
 
 namespace TaskManagerApi.DTOs;
 
+/// <summary>
+/// DTO for creating a new task.
+/// </summary>
 public class CreateTaskDto
 {
+    /// <summary>
+    /// Task title (required).
+    /// </summary>
     [Required]
-    [StringLength(200, MinimumLength = 1)]
-    [DefaultValue("Complete project documentation")]
+    [StringLength(ValidationConstants.Task.TitleMaxLength, MinimumLength = ValidationConstants.Task.TitleMinLength)]
     public string Title { get; set; } = string.Empty;
     
-    [StringLength(1000)]
-    [DefaultValue("Write comprehensive documentation for the API endpoints")]
+    /// <summary>
+    /// Detailed task description (optional).
+    /// </summary>
+    [StringLength(ValidationConstants.Task.DescriptionMaxLength)]
     public string Description { get; set; } = string.Empty;
     
-    [DefaultValue("2025-12-31T23:59:59Z")]
+    /// <summary>
+    /// Optional due date for the task.
+    /// </summary>
     public DateTime? DueDate { get; set; }
     
-    [DefaultValue(2)]
+    /// <summary>
+    /// Task priority level (defaults to Medium).
+    /// </summary>
     public Priority Priority { get; set; } = Priority.Medium;
     
-    [DefaultValue(null)]
+    /// <summary>
+    /// Optional category ID for organizing the task.
+    /// </summary>
     public Guid? CategoryId { get; set; }
 
+    /// <summary>
+    /// Validates the DTO properties.
+    /// </summary>
+    /// <param name="validationContext">Validation context.</param>
+    /// <returns>Validation results.</returns>
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
         if (DueDate.HasValue && DueDate.Value < DateTime.UtcNow.Date)
-            yield return new ValidationResult("Due date cannot be in the past", new[] { nameof(DueDate) });
+            yield return new ValidationResult(ErrorMessages.Task.DueDateInPast, new[] { nameof(DueDate) });
     }
 }

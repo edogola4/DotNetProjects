@@ -2,13 +2,21 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Swagger;
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Swashbuckle.AspNetCore.SwaggerUI;
 using Serilog;
+using TaskManagerApi.Configuration;
 using TaskManagerApi.Data;
 using TaskManagerApi.Hubs;
 using TaskManagerApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configure strongly-typed settings
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+builder.Services.Configure<CorsSettings>(builder.Configuration.GetSection(CorsSettings.SectionName));
+builder.Services.Configure<SignalRSettings>(builder.Configuration.GetSection(SignalRSettings.SectionName));
 
 builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
@@ -20,6 +28,13 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 
+// Get configuration settings
+var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JWT settings not configured");
+
+var signalRSettings = builder.Configuration.GetSection(SignalRSettings.SectionName).Get<SignalRSettings>()
+    ?? new SignalRSettings();
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -29,20 +44,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
-            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Secret"] ?? 
-                throw new InvalidOperationException("JWT Secret not configured")))
+                Encoding.UTF8.GetBytes(jwtSettings.Secret))
         };        
         // Allow JWT tokens in SignalR WebSocket connections
         options.Events = new JwtBearerEvents
         {
             OnMessageReceived = context =>
             {
-                var accessToken = context.Request.Query["access_token"];
+                var accessToken = context.Request.Query[signalRSettings.AccessTokenParameter];
                 var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments(signalRSettings.TaskHubPath))
                 {
                     context.Token = accessToken;
                 }
@@ -51,14 +65,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Configure CORS
+var corsSettings = builder.Configuration.GetSection(CorsSettings.SectionName).Get<CorsSettings>()
+    ?? new CorsSettings();
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("BlazorUI", policy =>
+    options.AddPolicy(corsSettings.PolicyName, policy =>
     {
-        policy.SetIsOriginAllowed(_ => true)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        if (corsSettings.AllowAnyOrigin)
+        {
+            policy.SetIsOriginAllowed(_ => true);
+        }
+        else
+        {
+            policy.WithOrigins(corsSettings.AllowedOrigins);
+        }
+        
+        policy.AllowAnyMethod()
+              .AllowAnyHeader();
+              
+        if (corsSettings.AllowCredentials)
+        {
+            policy.AllowCredentials();
+        }
     });
 });
 
@@ -67,28 +97,16 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    // Include XML documentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
     {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
+        c.IncludeXmlComments(xmlPath);
+    }
+    
+    // Enable annotations for better documentation
+    c.EnableAnnotations();
 });
 
 var app = builder.Build();
@@ -96,7 +114,24 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Task Manager API v1");
+        c.RoutePrefix = "swagger";
+        c.DocumentTitle = "Task Manager API Documentation";
+        c.DefaultModelsExpandDepth(2);
+        c.DefaultModelRendering(Swashbuckle.AspNetCore.SwaggerUI.ModelRendering.Example);
+        c.DisplayRequestDuration();
+        c.EnableDeepLinking();
+        c.EnableFilter();
+        c.ShowExtensions();
+        c.EnableValidator();
+        c.SupportedSubmitMethods(Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Get, 
+                                Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Post, 
+                                Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Put, 
+                                Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Delete, 
+                                Swashbuckle.AspNetCore.SwaggerUI.SubmitMethod.Patch);
+    });
     app.UseStaticFiles();
 }
 else
@@ -105,12 +140,15 @@ else
 }
 
 app.UseHttpsRedirection();
-app.UseCors("BlazorUI");
+app.UseCors(corsSettings.PolicyName);
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.MapHub<TaskHub>("/hubs/tasks");
+app.MapHub<TaskHub>(signalRSettings.TaskHubPath);
 
 app.Run();
 
+/// <summary>
+/// Partial Program class for testing support.
+/// </summary>
 public partial class Program { }

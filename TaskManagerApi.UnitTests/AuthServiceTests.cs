@@ -1,12 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Moq;
 using TaskManagerApi.Data;
 using TaskManagerApi.DTOs;
 using TaskManagerApi.Services;
+using TaskManagerApi.Configuration;
 using FluentAssertions;
-
-namespace TaskManagerApi.UnitTests;
 
 public class AuthServiceTests
 {
@@ -18,24 +17,24 @@ public class AuthServiceTests
         return new ApplicationDbContext(options);
     }
 
-    private IConfiguration GetConfiguration()
+    private IOptions<JwtSettings> GetJwtOptions()
     {
-        var config = new Dictionary<string, string>
+        var jwtSettings = new JwtSettings
         {
-            {"JwtSettings:Secret", "test-secret-key-min-32-characters-long"},
-            {"JwtSettings:Issuer", "TestIssuer"},
-            {"JwtSettings:Audience", "TestAudience"},
-            {"JwtSettings:ExpirationMinutes", "60"}
+            Secret = "test-secret-key-min-32-characters-long",
+            Issuer = "TestIssuer",
+            Audience = "TestAudience",
+            ExpirationMinutes = 60
         };
-        return new ConfigurationBuilder().AddInMemoryCollection(config!).Build();
+        return Options.Create(jwtSettings);
     }
 
     [Fact]
     public async Task RegisterAsync_WithValidData_ReturnsAuthResponse()
     {
         var context = GetInMemoryDbContext();
-        var config = GetConfiguration();
-        var service = new AuthService(context, config);
+        var jwtOptions = GetJwtOptions();
+        var service = new AuthService(context, jwtOptions);
         var registerDto = new RegisterDto
         {
             Username = "testuser",
@@ -55,8 +54,8 @@ public class AuthServiceTests
     public async Task RegisterAsync_WithDuplicateEmail_ReturnsNull()
     {
         var context = GetInMemoryDbContext();
-        var config = GetConfiguration();
-        var service = new AuthService(context, config);
+        var jwtOptions = GetJwtOptions();
+        var service = new AuthService(context, jwtOptions);
         var registerDto = new RegisterDto
         {
             Username = "testuser",
@@ -74,8 +73,8 @@ public class AuthServiceTests
     public async Task LoginAsync_WithValidCredentials_ReturnsAuthResponse()
     {
         var context = GetInMemoryDbContext();
-        var config = GetConfiguration();
-        var service = new AuthService(context, config);
+        var jwtOptions = GetJwtOptions();
+        var service = new AuthService(context, jwtOptions);
         var registerDto = new RegisterDto
         {
             Username = "testuser",
@@ -99,8 +98,8 @@ public class AuthServiceTests
     public async Task LoginAsync_WithInvalidPassword_ReturnsNull()
     {
         var context = GetInMemoryDbContext();
-        var config = GetConfiguration();
-        var service = new AuthService(context, config);
+        var jwtOptions = GetJwtOptions();
+        var service = new AuthService(context, jwtOptions);
         var registerDto = new RegisterDto
         {
             Username = "testuser",

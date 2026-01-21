@@ -1,0 +1,117 @@
+<Project>
+  <PropertyGroup>
+    <!-- Target Framework -->
+    <TargetFramework>net10.0</TargetFramework>
+    
+    <!-- Language Features -->
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors />
+    
+    <!-- Code Analysis -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    
+    <!-- Assembly Info -->
+    <Authors>Brandon Personal Projects</Authors>
+    <Company>Personal</Company>
+    <Product>Personal .NET Projects</Product>
+    <Copyright>Copyright © Brandon 2025</Copyright>
+    
+    <!-- Build Configuration -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn> <!-- Missing XML comment warnings -->
+    
+    <!-- Runtime Configuration -->
+    <SelfContained>false</SelfContained>
+    
+    <!-- Performance -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    
+    <!-- Security -->
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishReadyToRun>false</PublishReadyToRun>
+    
+    <!-- Development -->
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <!-- Common Package References -->
+  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' AND !$(MSBuildProjectName.EndsWith('UI'))">
+    <!-- Logging -->
+    <PackageReference Include="Serilog.AspNetCore" Version="10.*" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.*" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.*" />
+  </ItemGroup>
+
+  <!-- Test Project References -->
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.UnitTests')) OR $(MSBuildProjectName.EndsWith('.IntegrationTests'))">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.*" />
+    <PackageReference Include="xunit" Version="2.*" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.*" />
+    <PackageReference Include="FluentAssertions" Version="7.*" />
+    <PackageReference Include="Moq" Version="4.*" />
+    <PackageReference Include="coverlet.collector" Version="6.*" />
+  </ItemGroup>
+
+  <!-- Web Project References -->
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Api'))">
+    <PackageReference Include="FluentValidation.AspNetCore" Version="11.*" />
+  </ItemGroup>
+
+  <!-- Database Project References -->
+  <ItemGroup Condition="($(MSBuildProjectName.Contains('TaskManager')) OR $(MSBuildProjectName.Contains('Database'))) AND !$(MSBuildProjectName.EndsWith('UI'))">
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.*" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.*">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <!-- Code Analysis Rules -->
+  <PropertyGroup>
+    <!-- Disable specific warnings for personal projects -->
+    <NoWarn>$(NoWarn);CA1014</NoWarn> <!-- Mark assemblies with CLSCompliant -->
+    <NoWarn>$(NoWarn);CA1062</NoWarn> <!-- Validate arguments of public methods -->
+    <NoWarn>$(NoWarn);CA1303</NoWarn> <!-- Do not pass literals as localized parameters -->
+    <NoWarn>$(NoWarn);CA1308</NoWarn> <!-- Normalize strings to uppercase -->
+    <NoWarn>$(NoWarn);CA2007</NoWarn> <!-- Consider calling ConfigureAwait on the awaited task -->
+  </PropertyGroup>
+
+  <!-- Global Using Statements -->
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="System.Collections.Generic" />
+    <Using Include="System.Linq" />
+    <Using Include="System.Threading" />
+    <Using Include="System.Threading.Tasks" />
+  </ItemGroup>
+
+  <!-- Test Project Global Usings -->
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests')) OR $(MSBuildProjectName.EndsWith('.UnitTests')) OR $(MSBuildProjectName.EndsWith('.IntegrationTests'))">
+    <Using Include="Xunit" />
+    <Using Include="FluentAssertions" />
+    <Using Include="Moq" />
+  </ItemGroup>
+
+  <!-- Web Project Global Usings -->
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('Api')) OR $(MSBuildProjectName.EndsWith('Web'))">
+    <Using Include="Microsoft.AspNetCore.Mvc" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+  <!-- Blazor UI Project Global Usings -->
+  <ItemGroup Condition="$(MSBuildProjectName.EndsWith('UI'))">
+    <Using Include="Microsoft.AspNetCore.Components" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+</Project>
