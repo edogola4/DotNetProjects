@@ -39,7 +39,9 @@ public class TaskService : ITaskService
             Description = dto.Description,
             DueDate = dto.DueDate,
             Priority = dto.Priority,
+            Status = dto.Status,
             CategoryId = dto.CategoryId,
+            EstimatedHours = dto.EstimatedHours,
             UserId = userId,
             CreatedAt = now,
             UpdatedAt = now
@@ -65,7 +67,13 @@ public class TaskService : ITaskService
             query = query.Where(t => t.Title.ToLower().Contains(parameters.Search.ToLower()) || t.Description.ToLower().Contains(parameters.Search.ToLower()));
 
         if (parameters.IsCompleted.HasValue)
-            query = query.Where(t => t.IsCompleted == parameters.IsCompleted.Value);
+        {
+            var targetStatus = parameters.IsCompleted.Value ? Models.TaskStatus.Completed : Models.TaskStatus.NotStarted;
+            if (parameters.IsCompleted.Value)
+                query = query.Where(t => t.Status == Models.TaskStatus.Completed);
+            else
+                query = query.Where(t => t.Status != Models.TaskStatus.Completed);
+        }
 
         if (parameters.Priority.HasValue)
             query = query.Where(t => t.Priority == parameters.Priority.Value);
@@ -122,9 +130,19 @@ public class TaskService : ITaskService
         if (dto.Title != null) task.Title = dto.Title;
         if (dto.Description != null) task.Description = dto.Description;
         if (dto.DueDate.HasValue) task.DueDate = dto.DueDate;
-        if (dto.IsCompleted.HasValue) task.IsCompleted = dto.IsCompleted.Value;
+        if (dto.Status.HasValue) 
+        {
+            task.Status = dto.Status.Value;
+            if (dto.Status.Value == Models.TaskStatus.Completed)
+            {
+                task.CompletedAt = DateTime.UtcNow;
+                task.CompletedByUserId = userId;
+            }
+        }
         if (dto.Priority.HasValue) task.Priority = dto.Priority.Value;
         if (dto.CategoryId.HasValue) task.CategoryId = dto.CategoryId;
+        if (dto.EstimatedHours.HasValue) task.EstimatedHours = dto.EstimatedHours.Value;
+        if (dto.ActualHours.HasValue) task.ActualHours = dto.ActualHours.Value;
 
         task.UpdatedAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
@@ -157,7 +175,9 @@ public class TaskService : ITaskService
 
         if (task == null) return null;
 
-        task.IsCompleted = true;
+        task.Status = Models.TaskStatus.Completed;
+        task.CompletedAt = DateTime.UtcNow;
+        task.CompletedByUserId = userId;
         task.UpdatedAt = DateTime.UtcNow;
         
         try
@@ -216,7 +236,7 @@ public class TaskService : ITaskService
     {
         var now = DateTime.UtcNow;
         var tasks = await _context.Tasks
-            .Where(t => t.UserId == userId && !t.IsCompleted && t.DueDate.HasValue && t.DueDate.Value < now)
+            .Where(t => t.UserId == userId && t.Status != Models.TaskStatus.Completed && t.DueDate.HasValue && t.DueDate.Value < now)
             .OrderBy(t => t.DueDate)
             .ToListAsync();
 
@@ -228,7 +248,7 @@ public class TaskService : ITaskService
         var now = DateTime.UtcNow;
         var futureDate = now.AddDays(days);
         var tasks = await _context.Tasks
-            .Where(t => t.UserId == userId && !t.IsCompleted && t.DueDate.HasValue && t.DueDate.Value >= now && t.DueDate.Value <= futureDate)
+            .Where(t => t.UserId == userId && t.Status != Models.TaskStatus.Completed && t.DueDate.HasValue && t.DueDate.Value >= now && t.DueDate.Value <= futureDate)
             .OrderBy(t => t.DueDate)
             .ToListAsync();
 
@@ -237,8 +257,8 @@ public class TaskService : ITaskService
 
     public async Task<TaskStatsDto> GetTaskStatsAsync(Guid userId)
     {
-        var completedCount = await _context.Tasks.CountAsync(t => t.UserId == userId && t.IsCompleted);
-        var pendingCount = await _context.Tasks.CountAsync(t => t.UserId == userId && !t.IsCompleted);
+        var completedCount = await _context.Tasks.CountAsync(t => t.UserId == userId && t.Status == Models.TaskStatus.Completed);
+        var pendingCount = await _context.Tasks.CountAsync(t => t.UserId == userId && t.Status != Models.TaskStatus.Completed);
         
         _logger.LogInformation("Task stats for user {UserId}: Completed={CompletedCount}, Pending={PendingCount}", 
             userId, completedCount, pendingCount);
@@ -263,11 +283,16 @@ public class TaskService : ITaskService
             Title = task.Title,
             Description = task.Description,
             DueDate = task.DueDate,
-            IsCompleted = task.IsCompleted,
+            Status = task.Status,
             Priority = task.Priority,
             CategoryId = task.CategoryId,
+            EstimatedHours = task.EstimatedHours,
+            ActualHours = task.ActualHours,
+            CompletedAt = task.CompletedAt,
             CreatedAt = task.CreatedAt,
-            UpdatedAt = task.UpdatedAt
+            UpdatedAt = task.UpdatedAt,
+            CommentCount = task.Comments?.Count ?? 0,
+            AttachmentCount = task.Attachments?.Count ?? 0
         };
     }
 }

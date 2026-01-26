@@ -39,4 +39,19 @@ public class User
     /// Collection of categories created by this user.
     /// </summary>
     public ICollection<Category> Categories { get; set; } = new List<Category>();
+    
+    /// <summary>
+    /// User's extended profile information.
+    /// </summary>
+    public UserProfile? Profile { get; set; }
+    
+    /// <summary>
+    /// Collection of comments created by this user.
+    /// </summary>
+    public ICollection<TaskComment> Comments { get; set; } = new List<TaskComment>();
+    
+    /// <summary>
+    /// Collection of attachments uploaded by this user.
+    /// </summary>
+    public ICollection<TaskAttachment> Attachments { get; set; } = new List<TaskAttachment>();
 }

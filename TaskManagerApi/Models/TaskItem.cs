@@ -28,9 +28,14 @@ public class TaskItem
     public DateTime? DueDate { get; set; }
     
     /// <summary>
-    /// Indicates whether the task has been completed.
+    /// Current status of the task.
     /// </summary>
-    public bool IsCompleted { get; set; }
+    public TaskStatus Status { get; set; } = TaskStatus.NotStarted;
+    
+    /// <summary>
+    /// Indicates whether the task has been completed (computed property).
+    /// </summary>
+    public bool IsCompleted => Status == TaskStatus.Completed;
     
     /// <summary>
     /// Priority level of the task.
@@ -71,6 +76,46 @@ public class TaskItem
     /// Collection of tags associated with this task.
     /// </summary>
     public ICollection<Tag> Tags { get; set; } = new List<Tag>();
+    
+    /// <summary>
+    /// Collection of comments on this task.
+    /// </summary>
+    public ICollection<TaskComment> Comments { get; set; } = new List<TaskComment>();
+    
+    /// <summary>
+    /// Collection of file attachments on this task.
+    /// </summary>
+    public ICollection<TaskAttachment> Attachments { get; set; } = new List<TaskAttachment>();
+    
+    /// <summary>
+    /// Estimated time to complete the task in hours.
+    /// </summary>
+    public decimal? EstimatedHours { get; set; }
+    
+    /// <summary>
+    /// Actual time spent on the task in hours.
+    /// </summary>
+    public decimal? ActualHours { get; set; }
+    
+    /// <summary>
+    /// Date and time when the task was completed.
+    /// </summary>
+    public DateTime? CompletedAt { get; set; }
+    
+    /// <summary>
+    /// ID of the user who completed the task.
+    /// </summary>
+    public Guid? CompletedByUserId { get; set; }
+    
+    /// <summary>
+    /// Navigation property to the user who completed the task.
+    /// </summary>
+    public User? CompletedByUser { get; set; }
+    
+    /// <summary>
+    /// Indicates if the task has been soft deleted.
+    /// </summary>
+    public bool IsDeleted { get; set; }
 }
 
 /// <summary>

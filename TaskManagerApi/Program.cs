@@ -109,6 +109,16 @@ builder.Services.AddSwaggerGen(c =>
     c.EnableAnnotations();
 });
 
+// Configure Kestrel for cross-platform deployment
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Listen(System.Net.IPAddress.Any, 5001, listenOptions =>
+    {
+        listenOptions.UseHttps(); // HTTPS on 5001
+    });
+    options.Listen(System.Net.IPAddress.Any, 5000); // HTTP on 5000
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
