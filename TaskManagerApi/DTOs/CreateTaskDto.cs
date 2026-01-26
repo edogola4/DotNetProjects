@@ -33,9 +33,25 @@ public class CreateTaskDto
     public Priority Priority { get; set; } = Priority.Medium;
     
     /// <summary>
+    /// Task status (defaults to NotStarted).
+    /// </summary>
+    public Models.TaskStatus Status { get; set; } = Models.TaskStatus.NotStarted;
+    
+    /// <summary>
     /// Optional category ID for organizing the task.
     /// </summary>
     public Guid? CategoryId { get; set; }
+    
+    /// <summary>
+    /// List of tag IDs to associate with the task.
+    /// </summary>
+    public List<Guid> TagIds { get; set; } = new();
+    
+    /// <summary>
+    /// Estimated time to complete in hours.
+    /// </summary>
+    [Range(0.1, 1000)]
+    public decimal? EstimatedHours { get; set; }
 
     /// <summary>
     /// Validates the DTO properties.

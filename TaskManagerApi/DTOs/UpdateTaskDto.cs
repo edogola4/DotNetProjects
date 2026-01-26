@@ -37,7 +37,29 @@ public class UpdateTaskDto
     public Priority? Priority { get; set; }
     
     /// <summary>
+    /// Task status (optional).
+    /// </summary>
+    public Models.TaskStatus? Status { get; set; }
+    
+    /// <summary>
     /// Category ID (optional).
     /// </summary>
     public Guid? CategoryId { get; set; }
+    
+    /// <summary>
+    /// List of tag IDs to associate with the task (optional).
+    /// </summary>
+    public List<Guid>? TagIds { get; set; }
+    
+    /// <summary>
+    /// Estimated time to complete in hours (optional).
+    /// </summary>
+    [Range(0.1, 1000)]
+    public decimal? EstimatedHours { get; set; }
+    
+    /// <summary>
+    /// Actual time spent in hours (optional).
+    /// </summary>
+    [Range(0.1, 1000)]
+    public decimal? ActualHours { get; set; }
 }

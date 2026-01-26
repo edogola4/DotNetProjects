@@ -41,7 +41,7 @@ public class TasksController : ControllerBase
     /// <response code="201">Task created successfully.</response>
     /// <response code="400">Invalid task data.</response>
     [HttpPost]
-    public async Task<IActionResult> CreateTask([FromBody] CreateTaskDto dto)
+    public async Task<ActionResult<TaskResponseDto>> CreateTask([FromBody] CreateTaskDto dto)
     {
         var task = await _taskService.CreateTaskAsync(GetUserId(), dto);
         return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
@@ -54,7 +54,7 @@ public class TasksController : ControllerBase
     /// <returns>Paginated list of tasks with metadata in X-Pagination header.</returns>
     /// <response code="200">Tasks retrieved successfully.</response>
     [HttpGet]
-    public async Task<IActionResult> GetTasks([FromQuery] TaskFilterParameters parameters)
+    public async Task<ActionResult<List<TaskResponseDto>>> GetTasks([FromQuery] TaskFilterParameters parameters)
     {
         var userId = GetUserId();
         var pagedTasks = await _taskService.GetUserTasksAsync(userId, parameters);
@@ -81,7 +81,7 @@ public class TasksController : ControllerBase
     /// <response code="200">Task found.</response>
     /// <response code="404">Task not found.</response>
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetTask(Guid id)
+    public async Task<ActionResult<TaskResponseDto>> GetTask(Guid id)
     {
         var task = await _taskService.GetTaskByIdAsync(GetUserId(), id);
         return task == null ? NotFound() : Ok(task);
@@ -97,7 +97,7 @@ public class TasksController : ControllerBase
     /// <response code="404">Task not found.</response>
     /// <response code="400">Invalid task data.</response>
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateTask(Guid id, [FromBody] UpdateTaskDto dto)
+    public async Task<ActionResult<TaskResponseDto>> UpdateTask(Guid id, [FromBody] UpdateTaskDto dto)
     {
         var task = await _taskService.UpdateTaskAsync(GetUserId(), id, dto);
         return task == null ? NotFound() : Ok(task);
@@ -132,42 +132,12 @@ public class TasksController : ControllerBase
     }
 
     /// <summary>
-    /// Adds tags to an existing task.
-    /// </summary>
-    /// <param name="id">Task ID to add tags to.</param>
-    /// <param name="tags">List of tag names to add.</param>
-    /// <returns>No content on successful addition.</returns>
-    /// <response code="204">Tags added successfully.</response>
-    /// <response code="404">Task not found.</response>
-    [HttpPost("{id}/tags")]
-    public async Task<IActionResult> AddTags(Guid id, [FromBody] List<string> tags)
-    {
-        await _taskService.AddTagsToTaskAsync(GetUserId(), id, tags);
-        return NoContent();
-    }
-
-    /// <summary>
-    /// Removes tags from an existing task.
-    /// </summary>
-    /// <param name="id">Task ID to remove tags from.</param>
-    /// <param name="tags">List of tag names to remove.</param>
-    /// <returns>No content on successful removal.</returns>
-    /// <response code="204">Tags removed successfully.</response>
-    /// <response code="404">Task not found.</response>
-    [HttpDelete("{id}/tags")]
-    public async Task<IActionResult> RemoveTags(Guid id, [FromBody] List<string> tags)
-    {
-        await _taskService.RemoveTagsFromTaskAsync(GetUserId(), id, tags);
-        return NoContent();
-    }
-
-    /// <summary>
     /// Gets all overdue tasks for the authenticated user.
     /// </summary>
     /// <returns>List of overdue tasks.</returns>
     /// <response code="200">Overdue tasks retrieved successfully.</response>
     [HttpGet("overdue")]
-    public async Task<IActionResult> GetOverdueTasks()
+    public async Task<ActionResult<List<TaskResponseDto>>> GetOverdueTasks()
     {
         var tasks = await _taskService.GetOverdueTasksAsync(GetUserId());
         return Ok(tasks);
@@ -180,7 +150,7 @@ public class TasksController : ControllerBase
     /// <returns>List of upcoming tasks.</returns>
     /// <response code="200">Upcoming tasks retrieved successfully.</response>
     [HttpGet("upcoming")]
-    public async Task<IActionResult> GetUpcomingTasks([FromQuery] int days = 7)
+    public async Task<ActionResult<List<TaskResponseDto>>> GetUpcomingTasks([FromQuery] int days = 7)
     {
         var tasks = await _taskService.GetUpcomingTasksAsync(GetUserId(), days);
         return Ok(tasks);
