@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using TaskManagerApi.Constants;
 using TaskManagerApi.DTOs;
@@ -9,7 +10,8 @@ namespace TaskManagerApi.Controllers;
 /// Controller for user authentication operations.
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
+[ApiVersion("1.0")]
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
